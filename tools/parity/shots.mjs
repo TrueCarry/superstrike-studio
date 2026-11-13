@@ -2,9 +2,10 @@
 // states as the native app's docs/screenshots (upstream tools/screenshots/capture.sh), and writes
 // tools/parity/out/report.html with native and web side by side, overlaid, and as a difference.
 //   node tools/parity/shots.mjs [name ...]      (default: every shot)
+//   node tools/parity/shots.mjs --readme        (the README screenshots, into docs/screenshots/)
 // Uses the dev server on 127.0.0.1:8017 when it runs, otherwise starts one. No extra packages.
 import { execFileSync, spawn } from "node:child_process";
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,7 +15,8 @@ const NATIVE_COMMIT = "991cbfc"; // last commit with the native app and its scre
 const SERVER = "http://127.0.0.1:8017/";
 const SIZE = [1310, 850]; // the native screenshots' size
 
-// name -> hash route with the state the native capture used (profile N, tab, view, unsaved change, held left button + scroll)
+// name -> page query and hash route with the state the native capture used (language, profile N, tab,
+// view, unsaved change, held left button + scroll)
 const SHOTS = {
   hits: "#/hits?dirty=1&press=1",
   "hits-rapid": "#/hits?profile=2&tab=rt&press=1",
@@ -23,7 +25,10 @@ const SHOTS = {
   sensor: "#/sensor?profile=3",
   profiles: "#/profiles?dirty=1",
   device: "#/device",
+  "lang-ja": "&lang=ja#/profiles?dirty=1",
+  "lang-ar": "&lang=ar#/sensor?profile=3",
 };
+const url = (n) => `${SERVER}?demo${SHOTS[n]}`;
 
 const BROWSERS = [
   process.env.CHROME,
@@ -58,12 +63,12 @@ function nativePng(name) {
   return execFileSync("git", ["show", `${NATIVE_COMMIT}:docs/screenshots/${name}.png`], { cwd: ROOT, maxBuffer: 1 << 26 });
 }
 
-function webShot(browser, name, route) {
+function webShot(browser, name) {
   const file = join(OUT, `web-${name}.png`);
   execFileSync(browser, [
     "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", "--no-default-browser-check",
     "--force-device-scale-factor=1", `--window-size=${SIZE.join(",")}`, "--virtual-time-budget=6000",
-    `--user-data-dir=${join(OUT, "chrome-profile")}`, `--screenshot=${file}`, `${SERVER}?demo${route}`,
+    `--user-data-dir=${join(OUT, "chrome-profile")}`, `--screenshot=${file}`, url(name),
   ], { stdio: "ignore", timeout: 60_000 });
   return file;
 }
@@ -71,7 +76,7 @@ function webShot(browser, name, route) {
 function report(names) {
   const rows = names.map((n) => `
 <section id="${n}">
-  <h2>${n} <a href="${SERVER}?demo${SHOTS[n]}" target="_blank">open live</a></h2>
+  <h2>${n} <a href="${url(n)}" target="_blank">open live</a></h2>
   <div class="pair">
     <figure><figcaption>Native (${NATIVE_COMMIT})</figcaption><img src="native-${n}.png"></figure>
     <figure><figcaption>Web</figcaption><img src="web-${n}.png"></figure>
@@ -95,7 +100,10 @@ img{width:100%;display:block;border:1px solid #333}
 ${rows}`;
 }
 
-const names = process.argv.length > 2 ? process.argv.slice(2) : Object.keys(SHOTS);
+const args = process.argv.slice(2);
+const readme = args.includes("--readme");
+const picked = args.filter((a) => a !== "--readme");
+const names = picked.length ? picked : Object.keys(SHOTS);
 for (const n of names) if (!SHOTS[n]) throw new Error(`unknown shot "${n}". Known: ${Object.keys(SHOTS).join(", ")}`);
 const browser = BROWSERS.find((b) => existsSync(b));
 if (!browser) throw new Error("no Chrome or Edge found; set CHROME=/path/to/chrome");
@@ -104,11 +112,17 @@ const server = await ensureServer();
 try {
   for (const n of names) {
     writeFileSync(join(OUT, `native-${n}.png`), nativePng(n));
-    webShot(browser, n, SHOTS[n]);
+    webShot(browser, n);
     console.log(`  ${n}`);
   }
 } finally {
   server?.kill();
+}
+if (readme) {
+  const docs = join(ROOT, "docs/screenshots");
+  mkdirSync(docs, { recursive: true });
+  for (const n of names) copyFileSync(join(OUT, `web-${n}.png`), join(docs, `${n}.png`));
+  console.log(`README screenshots: ${docs}`);
 }
 writeFileSync(join(OUT, "report.html"), report(names));
 console.log(`Report: ${join(OUT, "report.html")}`);

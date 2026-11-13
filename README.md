@@ -34,6 +34,34 @@ knowledge, the mouse drawings and the translations come from that project.
 21 languages: English, 简体中文, 繁體中文, 日本語, 한국어, Русский, Українська, Español, Português (Brasil),
 Français, Deutsch, Italiano, Polski, Türkçe, العربية, हिन्दी, বাংলা, اردو, Bahasa Indonesia, Tiếng Việt, ไทย.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/hits.png" alt="HITS tuning"><br><b>HITS tuning</b>: actuation on a press-travel bar, left and right values on the drawing, test pad, and the save bar</td>
+    <td width="50%"><img src="docs/screenshots/hits-rapid.png" alt="Rapid trigger"><br><b>Rapid trigger</b>: on/off and level 1–5, with the reset zone shown on the travel bar</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/hits-presets.png" alt="HITS presets"><br><b>Presets</b>: your own, built-in and published pro-player HITS codes</td>
+    <td><img src="docs/screenshots/buttons.png" alt="Buttons"><br><b>Buttons</b>: side view; back and forward send keys, middle cycles DPI</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/sensor.png" alt="Sensor"><br><b>Sensor</b>: five DPI stages, polling rate for wireless and cable, tracking and power</td>
+    <td><img src="docs/screenshots/profiles.png" alt="Profiles"><br><b>Profiles</b>: the five onboard profiles, profile cycle, activate, copy, export, backup</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/device.png" alt="Device"><br><b>Device</b>: connection, battery, firmware, onboard memory, HID++ features, language</td>
+    <td><img src="docs/screenshots/lang-ja.png" alt="Japanese"><br><b>21 languages</b>: here Japanese, switched while the app runs</td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/lang-ar.png" alt="Arabic"><br><b>Right to left</b>: Arabic and Urdu mirror the whole window</td>
+    <td></td>
+  </tr>
+</table>
+
+<sub>The screenshots show the app in Chrome with the demo mouse (<code>?demo</code>, or <b>Try the demo</b> on
+the connect screen). <code>bun run screenshots</code> makes them again.</sub>
+
 ## How it compares
 
 | | **SuperStrike Studio Plus** | SuperStrike Studio | Logitech G HUB |
