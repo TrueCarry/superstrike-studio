@@ -2,7 +2,7 @@
 
 <img src="public/favicon.svg" width="96" alt="">
 
-# SuperStrike Studio Web
+# SuperStrike Studio Plus
 
 **Tune the Logitech PRO X3 / PRO X2 SUPERSTRIKE from your browser — no install, no G HUB.**
 
@@ -33,6 +33,29 @@ knowledge, the mouse drawings and the translations come from that project.
 
 21 languages: English, 简体中文, 繁體中文, 日本語, 한국어, Русский, Українська, Español, Português (Brasil),
 Français, Deutsch, Italiano, Polski, Türkçe, العربية, हिन्दी, বাংলা, اردو, Bahasa Indonesia, Tiếng Việt, ไทย.
+
+## How it compares
+
+| | **SuperStrike Studio Plus** | SuperStrike Studio | Logitech G HUB |
+|---|:--|:--|:--|
+| Install | none: a web page | one file per system | installer |
+| Linux | ✅ in a Chromium browser | ✅ | ❌ |
+| Windows | ✅ in a Chromium browser | ✅ | ✅ |
+| macOS | ✅ in a Chromium browser | ✅ | ✅ |
+| HITS actuation, rapid trigger, haptics | ✅ | ✅ | ✅ |
+| Haptics kept in the onboard profiles | ✅ | ✅ | ❌ ¹ |
+| Works with the app closed, no background service | ✅ | ✅ | ➖ onboard mode only |
+| Pro presets and HITS codes | ✅ | ✅ | ✅ |
+| Demo mouse, to try it without one | ✅ | ✅ | ❌ |
+| Account, telemetry | none | none | optional account |
+| Updates | not needed: the page is always the latest version | in the app, once a day, can be turned off | background update service |
+| Lighting, macros, other Logitech devices | ❌ | ❌ | ✅ |
+| Open source | ✅ MIT | ✅ MIT | ❌ |
+
+<sub>✅ yes · ➖ partial · ❌ no. ¹ In tests by the SuperStrike Studio authors with a PRO X3 SUPERSTRIKE.
+Firefox and Safari have no WebHID, so SuperStrike Studio Plus needs Chrome, Edge, Brave, Opera or
+another Chromium browser. G HUB is a much bigger product for the whole Logitech line-up; both
+SuperStrike apps do one mouse. Corrections are welcome in an issue.</sub>
 
 ## Requirements
 
@@ -101,5 +124,5 @@ web app has are English for now — add them to the `.po` files to translate the
 
 ## License
 
-MIT — see [LICENSE](LICENSE). Copyright © 2026 The SuperStrike Studio authors; the web port is under
-the same license.
+MIT — see [LICENSE](LICENSE). Copyright © 2026 TrueCarry and thekiba. Based on SuperStrike Studio,
+copyright © 2026 The SuperStrike Studio authors, under the same license.

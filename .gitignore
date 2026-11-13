@@ -1,6 +1,7 @@
 node_modules
 dist
 *.tsbuildinfo
+tools/parity/out
 
 # editor / OS clutter
 .vscode/

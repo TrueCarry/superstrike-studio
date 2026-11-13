@@ -1,5 +1,5 @@
 {
-  "name": "superstrike-studio-web",
+  "name": "superstrike-studio-plus",
   "private": true,
   "version": "0.1.0",
   "type": "module",
@@ -7,7 +7,9 @@
     "dev": "bun --bun vite",
     "build": "tsc -b && bun --bun vite build",
     "preview": "bun --bun vite preview",
-    "test": "bun test"
+    "test": "bun test",
+    "parity:shots": "node tools/parity/shots.mjs",
+    "parity:strings": "node tools/parity/strings.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
