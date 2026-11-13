@@ -4,10 +4,10 @@
 
 # SuperStrike Studio Plus
 
-## Your SUPERSTRIKE, dialled in. In your browser. In a minute.
+## Set up your SUPERSTRIKE in a minute. Right in your browser.
 
 The lightweight G HUB alternative for the Logitech **PRO X3** and **PRO X2 SUPERSTRIKE**.<br>
-Tune the click, save it into the mouse, close the tab, play.
+Tune it, save it into the mouse, close the tab. Nothing to install, nothing left running.
 
 [![Open SuperStrike Studio Plus](https://img.shields.io/badge/Open_SuperStrike_Studio_Plus-3b9cff?style=for-the-badge)](https://truecarry.github.io/superstrike-studio/)
 &nbsp;
@@ -15,79 +15,59 @@ Tune the click, save it into the mouse, close the tab, play.
 
 <img src="docs/screenshots/hits.png" width="860" alt="Actuation point on a press-travel bar, left and right values on the mouse, click test pad and the Save to mouse button">
 
-**0** installs &nbsp;·&nbsp; **0** background apps &nbsp;·&nbsp; **0** accounts &nbsp;·&nbsp; **12** pro presets &nbsp;·&nbsp; **21** languages &nbsp;·&nbsp; **free**
+**0** installs &nbsp;·&nbsp; **0** background apps &nbsp;·&nbsp; **0** accounts &nbsp;·&nbsp; **5** profiles in the mouse &nbsp;·&nbsp; **21** languages &nbsp;·&nbsp; **free**
 
 </div>
 
 ---
 
-## Nothing between you and the game
+## Set it once. Forget the software.
 
-You paid for the best click on the market. You shouldn't need a heavy launcher running all day to
-keep it.
+You bought a top mouse. Keeping it the way you like shouldn't need a heavy app running all day.
 
-SuperStrike Studio Plus writes every setting **into the mouse itself**. Once you press
-**Save to mouse**, you can close the page for good: no tray icon, no service, no updater, no
-overlay, no account. Your mouse clicks the same in every game and on every PC, and no software
-update can change how it feels overnight.
+SuperStrike Studio Plus writes every setting **into the mouse itself**. Press **Save to mouse** and
+close the page: no tray icon, no service, no updater, no account. The mouse works the same on every
+PC, at home, at work or on a laptop, and no software update can change how it feels overnight.
 
-## Play like the pros
-
-Pick a player, feel it on the test pad, save. Done.
-
-| CS2 | VALORANT | League of Legends | Rainbow Six Siege |
-|:--|:--|:--|:--|
-| m0NESY · INS · KSCERATO | Coach Joe · McFaliN · Yetujey | ShowMaker · Siwoo · Lucid · Smash · Career | Blaz |
-
-Got a **HITS code** from a friend, a video or G HUB? Paste it in. Want to share yours? One click
-copies it — it works in G HUB too.
-
-## Find your perfect click
+## Make the click yours
 
 The SUPERSTRIKE has no ordinary switch: magnetic sensors and a haptic motor replace it. That gives
-you three dials no other mouse has.
+you three dials for each main button.
 
 | | What you feel | Range |
 |---|---|---|
-| **Actuation point** | How far you press before the shot goes out | 1 hair-trigger … 10 deep |
-| **Rapid trigger** | How little you lift before you can fire again — faster taps and spam clicks | 1 fastest … 5 slowest, or off |
+| **Actuation point** | How far you press before the click counts | 1 hair-trigger … 10 deep |
+| **Rapid trigger** | How little you lift before the next click can count, for fast repeated clicks | 1 fastest … 5 slowest, or off |
 | **Click haptics** | How strong the click feels under your finger | 0 silent … 5 strongest |
 
 Change a value and the mouse reacts **instantly**, before you save. The built-in test pad counts
-your clicks per second and hold time, so you compare levels by feel, not by guessing.
+your clicks per second and how long you held, so you choose by feel, not by guessing.
 
-**What the pros use** (the presets in the app, from HITS codes published by Logitech):
+Not sure where to start? Pick a ready preset: from a **light, fast click** to a **deep, deliberate
+press** or a **silent feel**, plus the published setups of well-known pro players. Got a **HITS
+code** from G HUB or a friend? Paste it in. Want to share yours? One click copies it.
 
-| You play | Actuation | Rapid trigger | Haptics | Tip |
-|---|---|---|---|---|
-| **CS2** | 2 to 6 | 1–3 | 3–5 | KSCERATO taps at 2, m0NESY presses deep at 6 — both win |
-| **VALORANT** | 2–4 | 2–3 | 2–5 | Go one step deeper if you fire by accident when you tense up |
-| **League of Legends** | 2 | 1–2 | 1–4 | Fastest reset for abilities and kiting |
-| **Rainbow Six Siege** | 6 | 3 | off | Blaz: deep, deliberate clicks with no buzz |
-| **Work and everyday** | 5 or deeper | slow or off | to taste | Fewer accidental clicks; put it on its own profile |
-
-## One mouse, five setups
-
-Keep **five profiles** in the mouse — say CS2, VALORANT, League, Desktop and a spare — and flip
-between them with a mouse button. Each one carries its own click feel, button actions, DPI stages
-and polling rate.
+## The whole mouse, not just the click
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/buttons.png" alt="Buttons"><br><b>Every button</b>: keys with modifiers, media keys, DPI and profile switching, a second layer while you hold DPI shift</td>
-    <td width="50%"><img src="docs/screenshots/sensor.png" alt="Sensor"><br><b>Sensor</b>: five DPI stages up to 48 000, polling up to 8 000 Hz, lift-off distance, angle snapping</td>
+    <td width="50%"><img src="docs/screenshots/buttons.png" alt="Buttons"><br><b>Every button</b>: keys and shortcuts with modifiers, media keys, DPI and profile switching, a second layer while you hold DPI shift</td>
+    <td width="50%"><img src="docs/screenshots/sensor.png" alt="Sensor"><br><b>Sensor</b>: five DPI stages up to 48 000, polling up to 8 000 Hz, lift-off distance, angle snapping, power saving</td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/profiles.png" alt="Profiles"><br><b>Profiles</b>: name, copy, export and back up all five</td>
-    <td><img src="docs/screenshots/hits-presets.png" alt="Presets"><br><b>Presets</b>: pros, built-ins and your own, one click each</td>
+    <td><img src="docs/screenshots/profiles.png" alt="Profiles"><br><b>Five profiles</b>: one for work, one for play, one for travel… switch with a mouse button</td>
+    <td><img src="docs/screenshots/hits-presets.png" alt="Presets"><br><b>Presets</b>: built-in, pro and your own, one click each</td>
   </tr>
 </table>
+
+Each profile keeps its own click feel, buttons, DPI and polling rate. Copy one, export it as a
+file, or back up the whole mouse and restore it later.
 
 ## Up and running in a minute
 
 1. **[Open the page](https://truecarry.github.io/superstrike-studio/)** in Chrome or Edge — Windows, macOS or Linux.
 2. **Click Connect** and pick **USB Receiver**.
-3. **Tune it** and press **Save to mouse**. Close the tab. Play.
+3. **Tune it** and press **Save to mouse**. Close the tab. Done.
 
 Next time the page finds your mouse by itself. Using G HUB? Quit it first (also in the tray) so it
 lets go of the receiver.
@@ -97,13 +77,13 @@ lets go of the receiver.
 | | **SuperStrike Studio Plus** | Logitech G HUB |
 |---|:-:|:-:|
 | Set up | **open a link** | download and install |
-| Running while you play | **nothing** | background service unless you turn it off |
+| Running in the background | **nothing** | background service unless you turn it off |
 | Account | **never** | optional |
 | Updates | **automatic: always the latest page** | updater in the background |
 | Windows · macOS · Linux | **✅ ✅ ✅** | ✅ ✅ ❌ |
 | Actuation, rapid trigger, haptics | ✅ | ✅ |
 | Haptics saved in the mouse | ✅ | ❌ ¹ |
-| Pro presets and HITS codes | ✅ | ✅ |
+| Presets and HITS codes | ✅ | ✅ |
 | Live click test pad | ✅ | ➖ |
 | Try it without the mouse | ✅ | ❌ |
 | Lighting, macros, other Logitech gear | ❌ | ✅ |
