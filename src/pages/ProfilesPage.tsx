@@ -134,7 +134,7 @@ function Card(props: { slot: number; fileInput: React.RefObject<HTMLInputElement
         <Switch checked={entry.enabled} onChange={(v) => setDirEnabled(slot, v)} label={t("In profile cycle")} />
       </div>
       <div className="foot">
-        <button disabled={!p} onClick={() => (setEdit(sector), navigate("/hits"))}>{tc("profile card", "Edit")}</button>
+        <button disabled={!p} onClick={() => (setEdit(sector), navigate("/click"))}>{tc("profile card", "Edit")}</button>
         <button className={active ? "" : "suggested"} disabled={active || !connected || !p} onClick={() => void activateProfile(sector)}>{tc("profile card", "Activate")}</button>
         <span className="spacer" />
         <MenuButton icon="more" tooltip={t("More actions")}>

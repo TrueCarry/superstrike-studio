@@ -88,6 +88,8 @@ export interface MouseViewProps {
   /** "Title\nline 2"; Boxes rows may start with \x01 actuation, \x02 rapid trigger, \x03 haptics */
   labelFor?: (zone: Zone) => string;
   onZone?: (zone: Zone) => void;
+  /** a click on the shell outside the button zones (the sensor sits under it) */
+  onBody?: () => void;
 }
 
 class Renderer {
@@ -167,6 +169,16 @@ class Renderer {
       const z = pic.zones.get(act[i]);
       if (z && g.isPointInPath(z.path, x, y)) hit = act[i];
     }
+    g.restore();
+    return hit;
+  }
+  bodyAt(px: number, py: number): boolean {
+    if (this.anim || !this.props.onBody) return false;
+    const pic = picture(this.cur), r = this.fit(this.cur), body = pic.parts.find((p) => p.kind === "body");
+    const g = this.g;
+    g.save();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    const hit = !!body && g.isPointInPath(body.path, ((px - r.x) * pic.w) / r.w, ((py - r.y) * pic.h) / r.h);
     g.restore();
     return hit;
   }
@@ -520,7 +532,7 @@ class Renderer {
     const th = this.inThumb(x, y);
     if (th !== this.thumbHover) (this.thumbHover = th), this.draw();
     const z = th ? "" : this.zoneAt(x, y);
-    this.setHover(z, th || !!z);
+    this.setHover(z, th || !!z || this.bodyAt(x, y));
   }
   release(x: number, y: number) {
     const dx = this.dragDx, dy = y - this.dragY;
@@ -531,6 +543,7 @@ class Renderer {
     if (this.inThumb(x, y)) return this.userFlip();
     const z = this.zoneAt(x, y);
     if (z) this.props.onZone?.(z as Zone);
+    else if (this.bodyAt(x, y)) this.props.onBody?.();
   }
 }
 

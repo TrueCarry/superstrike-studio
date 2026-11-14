@@ -1,18 +1,16 @@
 // HITS page (upstream page_hits.cpp): actuation, rapid trigger and haptics per button, presets,
 // HITS codes, test pad. Panel on the left, the mouse with boxed callouts on the right.
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "react-router";
 import { Boxed, IconButton, LevelBar, MenuButton, Row, SwitchRow, Toggles, TravelBar } from "../components/controls";
 import { entryDialog } from "../components/dialogs";
-import { MouseView } from "../components/MouseView";
 import { BUTTON_ZONE } from "../components/useMouseInput";
 import type { Hits } from "../hid/device";
 import { f, t, tc } from "../i18n/i18n";
 import { BUILTIN_PRESETS, PRO_PRESETS, hitsCodeDecode, hitsCodeEncode, presetName, type Preset } from "../model/profile";
-import type { Zone } from "../model/tables";
 import { currentProfile, deletePreset, getState, liveHits, savePreset, toast, updateProfile, useStore } from "../state/store";
+import { setStudio, useStudio, type Target } from "../state/studio";
 
-type Target = "left" | "right" | "both";
 type Tab = "act" | "rt" | "hap" | "presets";
 const TABS: Tab[] = ["act", "rt", "hap", "presets"];
 
@@ -75,17 +73,9 @@ async function saveCurrent() {
 export default function HitsPage() {
   const profile = useStore(currentProfile);
   const [params] = useSearchParams();
-  const [target, setTarget] = useState<Target>("left");
+  const target = useStudio((s) => s.target);
+  const setTarget = (v: Target) => setStudio({ target: v });
   const [tab, setTab] = useState<Tab>(() => (TABS.includes(params.get("tab") as Tab) ? (params.get("tab") as Tab) : "act"));
-
-  const labelFor = useCallback(
-    (z: Zone) => {
-      if (!profile) return "";
-      const h = profile.hits[z === "btn-right" ? 1 : 0];
-      return `\x01 ${h.act}\n\x02 ${rtText(h)}\n\x03 ${h.hap}`;
-    },
-    [profile],
-  );
 
   const L = profile?.hits[0], R = profile?.hits[1];
   const h = (target === "right" ? R : L) ?? { act: 5, rt: 2, rtOn: false, hap: 3 };
@@ -97,7 +87,7 @@ export default function HitsPage() {
   };
 
   return (
-    <div className="split">
+    <>
       <section className={`ss-panel hits-panel ${profile ? "" : "off"}`}>
         <div className="head">
           <h2 className="ss-title">{t("HITS CONFIGURATION")}</h2>
@@ -151,13 +141,8 @@ export default function HitsPage() {
           {tab === "presets" && <Presets />}
         </div>
       </section>
-      <div className="stage">
-        <MouseView view="top" zones={["btn-left", "btn-right"]} callouts="boxes" grid thumbnail labelFor={labelFor}
-          selected={target === "both" ? "" : target === "left" ? "btn-left" : "btn-right"}
-          onZone={(z) => setTarget(z === "btn-right" ? "right" : "left")} />
-        <TestPad />
-      </div>
-    </div>
+      <TestPad />
+    </>
   );
 }
 

@@ -1,12 +1,15 @@
-// Main window like upstream window.cpp: sidebar (device card, navigation, edited profile), header
-// (page title, profile subtitle), banner while not connected, pages, and the unsaved-changes bar.
+// The app: a connect screen with the hero animation, then the studio. The studio has a top bar (tabs,
+// edited profile, battery, save), the large mouse in the middle, the settings panel next to it, and the
+// bar that slides up while there are unsaved changes.
 import { useEffect, useRef } from "react";
 import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation, useSearchParams } from "react-router";
 import { Dropdown } from "./components/controls";
 import { DialogHost } from "./components/dialogs";
 import { Icon, type IconName } from "./components/icons";
+import { Stage } from "./components/Stage";
 import { inputPress, inputWheel } from "./components/useMouseInput";
 import { f, t, tc, tn, useLanguage } from "./i18n/i18n";
+import { Illustration } from "./illustrations/Illustration";
 import ButtonsPage from "./pages/ButtonsPage";
 import DevicePage, { LanguagePicker } from "./pages/DevicePage";
 import HitsPage from "./pages/HitsPage";
@@ -16,10 +19,10 @@ import {
   autoConnect, connect, connectDemo, getState, markDirty, revert, save, setEdit, slotOf, useStore, type State,
 } from "./state/store";
 
-const PAGES: { to: string; title: string; icon: IconName }[] = [
-  { to: "/hits", title: "HITS tuning", icon: "hits" },
+const TABS: { to: string; title: string; icon: IconName }[] = [
+  { to: "/click", title: "Click", icon: "hits" },
+  { to: "/aim", title: "Aim", icon: "sensor" },
   { to: "/buttons", title: "Buttons", icon: "buttons" },
-  { to: "/sensor", title: "Sensor", icon: "sensor" },
   { to: "/profiles", title: "Profiles", icon: "profiles" },
   { to: "/device", title: "Device", icon: "device" },
 ];
@@ -48,13 +51,15 @@ export default function App() {
     <HashRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<Navigate to="/hits" replace />} />
-          <Route path="hits" element={<HitsPage />} />
+          <Route index element={<Navigate to="/click" replace />} />
+          <Route path="click" element={<HitsPage />} />
+          <Route path="aim" element={<SensorPage />} />
           <Route path="buttons" element={<ButtonsPage />} />
-          <Route path="sensor" element={<SensorPage />} />
           <Route path="profiles" element={<ProfilesPage />} />
           <Route path="device" element={<DevicePage />} />
-          <Route path="*" element={<Navigate to="/hits" replace />} />
+          <Route path="hits" element={<Navigate to="/click" replace />} />
+          <Route path="sensor" element={<Navigate to="/aim" replace />} />
+          <Route path="*" element={<Navigate to="/click" replace />} />
         </Route>
       </Routes>
     </HashRouter>
@@ -77,22 +82,20 @@ function Layout() {
   const connected = status === "connected";
   return (
     <div className={`app ${connected && dirty ? "has-savebar" : ""}`} key={code}>
-      <Sidebar />
-      <div className="main">
-        <Header />
-        {!connected && (
-          <div className="banner" role="status">
-            <span>{t("Searching for the PRO X3 SUPERSTRIKE — switch the mouse on or plug in the receiver")}</span>
-            <button className="suggested" disabled={status !== "disconnected"} onClick={() => void connect()}>{t("Retry")}</button>
+      {connected ? (
+        <>
+          <TopBar />
+          <div className="studio">
+            <Stage />
+            <main className="panel" key={pathname}>
+              <Outlet />
+            </main>
           </div>
-        )}
-        <div className="content">
-          <div className="page-fade" key={connected ? pathname : "connect"}>
-            {connected ? <Outlet /> : <ConnectCard />}
-          </div>
-        </div>
-        <SaveBar />
-      </div>
+          <SaveBar />
+        </>
+      ) : (
+        <ConnectScreen />
+      )}
       <Toasts />
       <Busy />
       <DialogHost />
@@ -100,72 +103,49 @@ function Layout() {
   );
 }
 
-function Sidebar() {
+function TopBar() {
   const info = useStore((s) => s.info);
-  const connected = useStore((s) => s.status === "connected");
-  const charging = connected && !!info?.batteryState.startsWith("charg");
-  const level = connected && !!info && info.battery >= 0;
-  // battery after the status: "82 %", "82 % ⚡" while charging, "⚡" when the level is unknown
+  const dirty = useStore((s) => s.dirty.length);
+  const charging = !!info?.batteryState.startsWith("charg");
+  const level = !!info && info.battery >= 0;
+  // "82 %", "82 % ⚡" while charging, "⚡" when the level is unknown
   let bat = level ? `${info!.battery} %` : "";
   if (charging) bat += bat ? " ⚡" : "⚡";
   const low = level && !charging && info!.battery <= 15;
   return (
-    <nav className="sidebar">
-      <div className="device-card">
+    <header className="topbar">
+      <div className="brand" title={info?.name}>
         <img src="./logo.svg" alt="" />
-        <div className="info">
-          <span className="name">{info?.name ?? "PRO X3 SUPERSTRIKE"}</span>
-          <span className="status">
-            <span className={`dot ${connected ? "ok" : ""}`}>●</span>
-            <span className="text">{connected ? t("Connected") : t("Searching for the mouse…")}</span>
-            {bat && <span className={`battery ${low ? "low" : ""}`}>· {bat}</span>}
-          </span>
-        </div>
+        <span className="dot ok" aria-label={t("Connected")}>●</span>
       </div>
-      <div className="nav">
-        {PAGES.map((p) => (
+      <nav className="tabs">
+        {TABS.map((p) => (
           <NavLink key={p.to} to={p.to} className={({ isActive }) => (isActive ? "on" : "")}>
             <Icon name={p.icon} size={18} />
-            {tc("page", p.title)}
+            <span>{tc("page", p.title)}</span>
           </NavLink>
         ))}
-      </div>
+      </nav>
       <EditedProfile />
-    </nav>
+      <span className="spacer" />
+      {bat && <span className={`battery ${low ? "low" : ""}`}>{bat}</span>}
+      <button className="suggested pill save" disabled={!dirty} onClick={() => void save()} title={t("Write the changes into the mouse memory (Ctrl+S)")}>
+        <Icon name="save" />
+        <span>{t("Save to mouse")}</span>
+      </button>
+    </header>
   );
 }
 
 function EditedProfile() {
   const s = useStore((s) => s);
-  const connected = s.status === "connected";
   const options = s.dir.map((e) => {
     let label = e.sector === s.active ? f(t("%s  (active)"), profileLabel(s, e.sector)) : profileLabel(s, e.sector);
     if (s.dirty.includes(e.sector)) label += "  •";
     return { value: e.sector, label };
   });
-  return (
-    <div className="editing">
-      <span className="ss-title">{t("EDITING")}</span>
-      <Dropdown value={s.edit} options={connected ? options : []} onChange={setEdit} disabled={!connected} tooltip={t("The profile you are editing")} up />
-    </div>
-  );
-}
-
-function Header() {
-  const s = useStore((s) => s);
-  const { pathname } = useLocation();
-  const page = PAGES.find((p) => pathname.startsWith(p.to)) ?? PAGES[0];
-  const sub = s.status !== "connected" ? t("Not connected")
-    : s.edit < 0 ? ""
-    : s.blank ? "Factory profile (no saved profiles yet)"
-    : s.edit === s.active ? f(t("%s · Active"), profileLabel(s, s.edit))
-    : f(t("%s · not active"), profileLabel(s, s.edit));
-  return (
-    <header className="header">
-      <span className="title">{tc("page", page.title)}</span>
-      {sub && <span className="subtitle">{sub}</span>}
-    </header>
-  );
+  if (s.blank) return <span className="ss-badge" title={t("The profile you are editing")}>{t("Factory profile")}</span>;
+  return <Dropdown className="profile-switch" value={s.edit} options={options} onChange={setEdit} tooltip={t("The profile you are editing")} />;
 }
 
 function SaveBar() {
@@ -198,8 +178,8 @@ interface PolicyApi {
   allowsFeature(feature: string): boolean;
 }
 
-/** Web only: the browser shows its device list only after a click, so the page offers one. */
-function ConnectCard() {
+/** The first screen: the hero animation, Connect and Try the demo. The browser shows its device list only after a click. */
+function ConnectScreen() {
   const status = useStore((s) => s.status);
   const error = useStore((s) => s.error);
   const supported = useStore((s) => s.supported);
@@ -209,51 +189,45 @@ function ConnectCard() {
   const embedded = supported && policy !== undefined && !policy.allowsFeature("hid");
   const busy = status !== "disconnected";
   return (
-    <div className="scroll">
-      <div className="column narrow">
-        <section className="ss-panel connect">
-          <div className="row-head">
-            <h2 className="ss-title">PRO X3 SUPERSTRIKE</h2>
-            <span className="spacer" />
-            <LanguagePicker />
-          </div>
-          {!supported ? (
-            <p className="error">This browser has no WebHID. Use Chrome, Edge or another Chromium browser.</p>
-          ) : embedded ? (
-            <p className="error">WebHID is blocked here (embedded preview or iframe). Open {location.href} in a normal browser window.</p>
-          ) : (
-            <>
-              <p className="ss-hint">Pick the LIGHTSPEED receiver ("USB Receiver") or the mouse on its cable. The browser remembers your choice.</p>
-              <div className="actions">
-                <button className="suggested pill" disabled={busy} onClick={() => void connect()}>
-                  {busy ? t("Searching for the mouse…") : "Connect the mouse…"}
-                </button>
-                <button className="pill" disabled={busy} onClick={() => void connectDemo()}>Try the demo</button>
-              </div>
-              {error && <p className="error">{error}</p>}
-              <details>
-                <summary className="ss-hint">Linux: the list is empty?</summary>
-                <p className="ss-hint">Your user needs access to the receiver. Add a udev rule, then replug the receiver:</p>
-                <pre>{`echo 'KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-superstrike.rules
-sudo udevadm control --reload-rules && sudo udevadm trigger`}</pre>
-              </details>
-            </>
-          )}
-          {!supported && (
-            <div className="actions">
-              <button className="pill" onClick={() => void connectDemo()}>Try the demo</button>
-            </div>
-          )}
-        </section>
+    <div className="connect-screen">
+      <div className="connect-lang"><LanguagePicker /></div>
+      <div className="connect-hero">
+        <Illustration scene="hero" value={{}} label="PRO X3 SUPERSTRIKE" />
       </div>
+      <h1>SuperStrike Studio Plus</h1>
+      <p className="lead">{t("Tune the PRO X3 SUPERSTRIKE: click feel, aim and buttons, saved into the mouse.")}</p>
+      {!supported ? (
+        <p className="error">This browser has no WebHID. Use Chrome, Edge or another Chromium browser.</p>
+      ) : embedded ? (
+        <p className="error">WebHID is blocked here (embedded preview or iframe). Open {location.href} in a normal browser window.</p>
+      ) : (
+        <p className="ss-hint">Pick the LIGHTSPEED receiver ("USB Receiver") or the mouse on its cable. The browser remembers your choice.</p>
+      )}
+      <div className="actions">
+        {supported && !embedded && (
+          <button className="suggested pill big" disabled={busy} onClick={() => void connect()}>
+            {busy ? <><span className="spinner" />{t("Searching for the mouse…")}</> : "Connect the mouse…"}
+          </button>
+        )}
+        <button className="pill big" disabled={busy} onClick={() => void connectDemo()}>Try the demo</button>
+      </div>
+      {error && <p className="error">{error}</p>}
+      {supported && !embedded && (
+        <details className="linux">
+          <summary className="ss-hint">Linux: the list is empty?</summary>
+          <p className="ss-hint">Your user needs access to the receiver. Add a udev rule, then replug the receiver:</p>
+          <pre>{`echo 'KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-superstrike.rules
+sudo udevadm control --reload-rules && sudo udevadm trigger`}</pre>
+        </details>
+      )}
     </div>
   );
 }
 
 /**
- * Screenshot states with the demo mouse, like upstream's --shot settings (tools/parity/shots.mjs):
- * profile=N edits profile N, dirty=1 marks it unsaved (nothing is written), press=1 holds the left
- * button and rolls the wheel so the picture shows the live view. Pages read tab= and view= themselves.
+ * Screenshot states with the demo mouse (tools/parity/shots.mjs): profile=N edits profile N, dirty=1
+ * marks it unsaved (nothing is written), press=1 holds the left button and rolls the wheel so the
+ * picture shows the live view. Panels read tab= and view= themselves.
  */
 function useShotParams() {
   const [params] = useSearchParams();
