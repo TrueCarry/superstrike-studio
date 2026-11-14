@@ -15,6 +15,7 @@ const KIND_CHIPS: { kind: Kind; label: string }[] = [
   { kind: "function", label: "Function" }, { kind: "disabled", label: "Disabled" }, { kind: "default", label: "Default" },
 ];
 const MOD_BITS = MODIFIERS.slice(0, 4); // Ctrl, Shift, Alt, Super
+const SHIFT_HOLD = 0x07; // the "DPI shift (hold)" function
 
 const slotOf = (p: Profile, layer: number, i: number): Action => (layer ? p.shiftButtons : p.buttons)[i];
 
@@ -76,6 +77,11 @@ export default function ButtonsPage() {
 
   const cur = profile ? slotOf(profile, layer, sel) : null;
   const kind = cur ? kindOf(cur) : "default";
+  const shiftAt = BUTTON_ZONES.findIndex((_, i) => {
+    const a = effectiveAction(profile, factory, 0, i);
+    return kindOf(a) === "function" && codeOf(a) === SHIFT_HOLD;
+  });
+  const held = layer && shiftAt >= 0 && shiftAt !== sel ? BUTTON_ZONES[shiftAt] : undefined;
 
   const setAction = (a: Action) => {
     const p = currentProfile(getState());
@@ -103,9 +109,12 @@ export default function ButtonsPage() {
     <>
       <div className="panel-head"><h2>{tc("page", "Buttons")}</h2></div>
       <FxCard title={t("Button")} icon="mouse">
-        <p className="ss-hint">{t("Pick a button here or on the mouse. The DPI-shift layer is used while a button set to DPI shift is held.")}</p>
-        <Segments<number> value={layer} onChange={setLayer} label={t("Used while a button set to DPI shift is held")}
-          options={[{ value: 0, label: tc("button layer", "Normal") }, { value: 1, label: t("DPI-shift layer") }]} />
+        <p className="ss-hint">{t("Pick a button here or on the mouse.")}</p>
+        <Segments<number> value={layer} onChange={setLayer} label={t("Which actions to change")}
+          options={[{ value: 0, label: tc("button layer", "Normal") }, { value: 1, label: t("While DPI shift is held") }]} />
+        <p className="ss-hint">{shiftAt >= 0
+          ? f(t("Holding %s (DPI shift) slows the cursor, and every other button can do something else, like Fn on a laptop keyboard."), buttonName(shiftAt))
+          : t("Set a button to DPI shift (hold) first. Holding it slows the cursor, and every other button can do something else, like Fn on a laptop keyboard.")}</p>
         <Boxed>
           {BUTTON_ZONES.map((z, i) => (
             <Row key={z} title={buttonName(i)} subtitle={profile ? describe(effective(i)) : ""} selected={i === sel} onClick={() => select(i)} />
@@ -113,8 +122,8 @@ export default function ButtonsPage() {
         </Boxed>
       </FxCard>
       <FxCard title={t("Action")} icon="buttons" value={profile ? <small>{describe(effective(sel))}</small> : undefined}
-        scene="remap" sceneValue={{ steps: [[BUTTON_ZONES[sel], iconOf(effective(sel))]] }} tall>
-          <p className="ss-hint">{f(t("What %s does."), buttonName(sel))}</p>
+        scene="remap" sceneValue={{ steps: [[BUTTON_ZONES[sel], iconOf(effective(sel))]], hold: held }} tall>
+          <p className="ss-hint">{f(layer ? t("What %s does while DPI shift is held.") : t("What %s does."), buttonName(sel))}</p>
           <div className="chips3">
             {KIND_CHIPS.map((c) => (
               <button key={c.kind} className={`ss-chip ${cur && c.kind === kind ? "on" : ""}`} aria-pressed={c.kind === kind}

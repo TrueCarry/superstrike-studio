@@ -56,6 +56,8 @@ const NOT_PORTED = {
   "Click a stage to switch the mouse to it now. New DPI values are felt after Save to mouse (Ctrl+S) — the mouse takes DPI only from its memory. ★ = stage after power-on.": "redesign: a shorter hint under the speed animation",
   "L %d · R %d · M %d · Back %d · Fwd %d · %d clicks/s · held %d ms": "redesign: Test clicks shows each number on its own under the mouse",
   "Test here — click with any button": "redesign: Test clicks on the large mouse",
+  "DPI-shift layer": "redesign: the layer choice reads \"While DPI shift is held\"",
+  "Used while a button set to DPI shift is held": "redesign: the hint under the layer choice names the DPI shift button",
   "Strongest": "redesign: haptics is a row of levels 0..5", "Rotate the mouse": "redesign: rotate by the thumbnail or a sideways drag",
   "EDITING": "redesign: the profile switcher in the top bar", "%s · Active": "redesign: the profile switcher marks the active profile",
   "%s · not active": "redesign: the profile switcher marks the active profile", "Name": "redesign: the name heads the Device panel",

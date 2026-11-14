@@ -39,6 +39,8 @@ export interface MouseOpts {
   ripples?: [number, string][];
   /** 0..1 lights the front thumb button (top view) */
   side?: number;
+  /** buttons held down the whole time, in orange */
+  held?: string[];
   shell?: string;
 }
 
@@ -92,6 +94,18 @@ export function mouse(g: G, x: number, y: number, h: number, o: MouseOpts = {}) 
       g.lineWidth = 3;
       g.stroke();
     }
+    g.restore();
+  }
+  for (const name of o.held ?? []) {
+    const zone = pic.zones.get(name);
+    if (!zone) continue;
+    g.save();
+    g.translate(x, y);
+    g.scale(s, s);
+    g.fillStyle = "rgba(0,0,0,0.18)";
+    g.fill(zone.path);
+    g.fillStyle = rgba(ORANGE, 0.6);
+    g.fill(zone.path);
     g.restore();
   }
   const zone = pic.zones.get(names[0])!;
