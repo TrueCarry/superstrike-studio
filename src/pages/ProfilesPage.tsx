@@ -8,7 +8,7 @@ import { Icon } from "../components/icons";
 import { MODE_HOST, MODE_ONBOARD } from "../hid/device";
 import { f, t, tc } from "../i18n/i18n";
 import { Illustration } from "../illustrations/Illustration";
-import { download, listAutoBackups, stamp, type StoredBackup } from "../model/backup";
+import { download, listAutoBackups, stamp } from "../model/backup";
 import { BUILTIN_PRESETS, FACTORY_SECTOR, PRO_PRESETS, hitsCodeDecode, presetName, profileFromJson, profileToJson, type Preset } from "../model/profile";
 import { applyPreset, copyCode, importCode, saveCurrent, summary } from "../state/hits";
 import {
@@ -33,14 +33,6 @@ export default function ProfilesPage() {
   const blank = useStore((s) => s.blank);
   const factoryEdited = useStore((s) => s.profiles[FACTORY_SECTOR]);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [autoBackups, setAutoBackups] = useState(listAutoBackups);
-
-  const confirmRestore = async (text: string, what: string) => {
-    const body = f(t("This overwrites the profiles in the mouse with the contents of %s. The current memory is saved to the backup folder first."), what);
-    if (!(await confirmDialog(t("Restore memory?"), body, t("Restore"), "destructive"))) return;
-    await restoreBackup(text);
-    setAutoBackups(listAutoBackups());
-  };
 
   return (
     <>
@@ -69,7 +61,6 @@ export default function ProfilesPage() {
         )}
         <FeelLibrary />
         <ControlMode />
-        <BackupPanel fileInput={fileInput} autoBackups={autoBackups} confirmRestore={confirmRestore} />
         <input ref={fileInput} type="file" accept=".json,application/json" hidden />
     </>
   );
@@ -237,15 +228,22 @@ function ControlMode() {
   );
 }
 
-function BackupPanel(props: {
-  fileInput: React.RefObject<HTMLInputElement | null>;
-  autoBackups: StoredBackup[];
-  confirmRestore: (text: string, what: string) => Promise<void>;
-}) {
+/** Back up and restore the whole memory, with the automatic backups kept in this browser. */
+export function BackupPanel() {
   const connected = useStore((s) => s.status === "connected");
+  const fileInput = useRef<HTMLInputElement>(null);
+  const [autoBackups, setAutoBackups] = useState(listAutoBackups);
+  const confirmRestore = async (text: string, what: string) => {
+    const body = f(t("This overwrites the profiles in the mouse with the contents of %s. The current memory is saved to the backup folder first."), what);
+    if (!(await confirmDialog(t("Restore memory?"), body, t("Restore"), "destructive"))) return;
+    await restoreBackup(text);
+    setAutoBackups(listAutoBackups());
+  };
+  const props = { fileInput, autoBackups, confirmRestore };
   return (
     <section className="ss-panel">
       <h2 className="ss-title">{t("BACKUP")}</h2>
+      <input ref={fileInput} type="file" accept=".json,application/json" hidden />
       <Boxed>
         <Row title={t("Back up whole memory…")} subtitle={t("All profiles, the directory and the factory profile, to a file")} chevron disabled={!connected}
           onClick={async () => {

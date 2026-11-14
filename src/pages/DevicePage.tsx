@@ -1,11 +1,13 @@
-// Device page (upstream page_device.cpp): identity, connection, firmware, onboard memory, mouse
-// colour and language, HID++ features, About. Web-only extras sit in a collapsed Advanced expander.
+// Device panel (upstream page_device.cpp): the mouse and its firmware, backup and restore, look and
+// language, HID++ features, About. Web-only extras sit in a collapsed Advanced fold.
 // Not ported: "Check for updates" (the web page is always the latest version).
-import { Boxed, Column, ButtonRow, ComboRow, ExpanderRow, Row } from "../components/controls";
+import { Boxed, ButtonRow, ComboRow, ExpanderRow, Row } from "../components/controls";
 import { ask } from "../components/dialogs";
+import { Icon } from "../components/icons";
 import { batteryStateText } from "../hid/device";
 import { f, LANGUAGES, setLanguage, t, tc, tn, useLanguage } from "../i18n/i18n";
 import { disconnect, setLook, useStore } from "../state/store";
+import { BackupPanel } from "./ProfilesPage";
 
 const hex = (n: number, w: number) => n.toString(16).toUpperCase().padStart(w, "0");
 const VERSION = "0.1.0";
@@ -22,6 +24,7 @@ export function LanguagePicker() {
           <option key={l.code} value={l.code} lang={l.code.replace("_", "-")}>{l.native}</option>
         ))}
       </select>
+      <Icon name="down" />
     </span>
   );
 }
@@ -56,53 +59,58 @@ export default function DevicePage() {
   const prop = (title: string, value: string) => <Row property title={title} subtitle={value || "—"} />;
 
   return (
-    <div className="scroll">
-      <Column>
+    <>
+      <div className="panel-head"><h2>{tc("page", "Device")}</h2></div>
+
+      <section className="device-hero">
+        <img src="./logo.svg" alt="" />
+        <div>
+          <h3>{on ? info.name : "PRO X3 SUPERSTRIKE"}</h3>
+          <span className="ss-hint">{battery || t("Connected")}</span>
+        </div>
+      </section>
+
+      <Boxed>
+        {prop(t("Connection"), on ? `${info.demo ? "demo" : "WebHID"} 046d:${info.productId.toString(16).padStart(4, "0")} · ${info.index === 0xff ? t("USB cable") : f(t("LIGHTSPEED receiver slot %d"), info.index)}` : "")}
+        {prop(t("Firmware"), on ? info.firmware.join("\n") : "")}
+        {prop(t("Onboard memory"), memory)}
+      </Boxed>
+
+      <BackupPanel />
+
+      <section className="ss-panel">
+        <h2 className="ss-title">{t("LOOK")}</h2>
         <Boxed>
-          {prop(tc("device info", "Name"), on ? info.name : "")}
-          {prop(t("Connection"), on ? `${info.demo ? "demo" : "WebHID"} 046d:${info.productId.toString(16).padStart(4, "0")} · ${info.index === 0xff ? t("USB cable") : f(t("LIGHTSPEED receiver slot %d"), info.index)}` : "")}
-          {prop(t("Battery"), battery)}
-          {prop(t("Firmware"), on ? info.firmware.join("\n") : "")}
-          {prop(t("Onboard memory"), memory)}
+          <Row title={t("Mouse colour in the pictures")}>
+            <input type="color" className="color-button" value={shell} onChange={(e) => setLook(e.target.value, accent)} aria-label={t("Mouse colour in the pictures")} />
+          </Row>
+          <ComboRow<string> title={t("Language")} value={choice} onChange={(c) => void setLanguage(c)}
+            options={[{ value: "system", label: t("System default") }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.native, lang: l.code.replace("_", "-") }))]} />
         </Boxed>
+      </section>
 
-        <section className="ss-panel">
-          <h2 className="ss-title">{t("LOOK")}</h2>
-          <Boxed>
-            <Row title={t("Mouse colour in the pictures")}>
-              <input type="color" className="color-button" value={shell} onChange={(e) => setLook(e.target.value, accent)} aria-label={t("Mouse colour in the pictures")} />
-            </Row>
-            <ComboRow<string> title={t("Language")} value={choice} onChange={(c) => void setLanguage(c)}
-              options={[{ value: "system", label: t("System default") }, ...LANGUAGES.map((l) => ({ value: l.code, label: l.native, lang: l.code.replace("_", "-") }))]} />
-          </Boxed>
-        </section>
+      <Boxed>
+        <ButtonRow icon="about" title={f(t("About %s"), APP_NAME)} onClick={showAbout} />
+      </Boxed>
 
-        <section className="ss-panel">
-          <h2 className="ss-title">{t("HID++ FEATURES")}</h2>
+      <details className="fold">
+        <summary>{t("Advanced")}<Icon name="down" /></summary>
+        <div className="fold-body">
           <Boxed>
             <ExpanderRow title={t("Feature table")} subtitle={on && info.features.length ? f(tn("%d feature", "%d features", info.features.length), info.features.length) : ""}>
               {(on ? info.features : []).map((ft) => (
                 <Row key={ft.index} title={`0x${hex(ft.id, 4)}`} subtitle={f(t("index %d · v%d · flags 0x%s"), ft.index, ft.version, hex(ft.flags, 2))} />
               ))}
             </ExpanderRow>
-          </Boxed>
-        </section>
-
-        <Boxed>
-          <ButtonRow icon="about" title={f(t("About %s"), APP_NAME)} onClick={showAbout} />
-        </Boxed>
-
-        <Boxed>
-          <ExpanderRow title="Advanced" subtitle="Accent colour, HID++ traffic, disconnect">
             <Row title="Accent colour">
               <input type="color" className="color-button" value={accent} onChange={(e) => setLook(shell, e.target.value)} aria-label="Accent colour" />
             </Row>
             <Row title="HID++ traffic" subtitle="The last requests and answers, newest at the bottom" />
             <pre className="log">{log.slice(-120).join("\n") || "—"}</pre>
             <ButtonRow title="Disconnect" disabled={!connected} onClick={() => void disconnect()} />
-          </ExpanderRow>
-        </Boxed>
-      </Column>
-    </div>
+          </Boxed>
+        </div>
+      </details>
+    </>
   );
 }

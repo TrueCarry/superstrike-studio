@@ -329,6 +329,9 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .card .foot { display: flex; align-items: center; gap: 8px; }
 
 /* ---------------------------------------------------------------- Device */
+.device-hero { display: flex; align-items: center; gap: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.device-hero img { width: 56px; height: 56px; }
+.device-hero h3 { margin: 0 0 2px; font-size: 18px; font-weight: 800; }
 .color-button { width: 44px; height: 30px; padding: 3px; border: 0; border-radius: 8px; background: var(--button); cursor: pointer; }
 .color-button::-webkit-color-swatch-wrapper { padding: 0; }
 .color-button::-webkit-color-swatch { border: 0; border-radius: 5px; }
