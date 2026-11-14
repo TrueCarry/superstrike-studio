@@ -1,6 +1,7 @@
 // Buttons page (upstream page_buttons.cpp): an action for each of the five buttons, on the normal
 // and the DPI-shift layer. The mouse with line callouts on the left, one panel on the right.
-import { Boxed, ComboRow, Row, Toggles } from "../components/controls";
+import { FxCard, Segments } from "../components/cards";
+import { Boxed, ComboRow, Row } from "../components/controls";
 import { ask, closeDialog } from "../components/dialogs";
 import { effectiveAction } from "../components/Stage";
 import { f, t, tc } from "../i18n/i18n";
@@ -16,6 +17,20 @@ const KIND_CHIPS: { kind: Kind; label: string }[] = [
 const MOD_BITS = MODIFIERS.slice(0, 4); // Ctrl, Shift, Alt, Super
 
 const slotOf = (p: Profile, layer: number, i: number): Action => (layer ? p.shiftButtons : p.buttons)[i];
+
+/** The icon the remapping animation shows for an action. */
+function iconOf(a: Action): string {
+  const code = codeOf(a);
+  switch (kindOf(a)) {
+    case "mouse": return "mouse";
+    case "key": return (modsOf(a) & 1) && code === 0x06 ? "copy" : "keyboard";
+    case "media": return "media";
+    case "function": return code >= 0x03 && code <= 0x07 ? "sensor" : code >= 0x08 && code <= 0x0a ? "profiles" : code === 0x0c ? "device" : "mouse";
+    case "disabled": return "minus";
+    case "raw": return "code";
+    default: return "undo";
+  }
+}
 const hexText = (a: Action) => a.map((b) => b.toString(16).padStart(2, "0")).join(" ");
 
 /** Waits for one key press in an alert dialog. Modifiers held with it become the modifier mask; a modifier alone is recorded on release. */
@@ -86,17 +101,20 @@ export default function ButtonsPage() {
 
   return (
     <>
-      <Toggles<number> value={layer} onChange={setLayer} title={t("Used while a button set to DPI shift is held")}
-        options={[{ value: 0, label: tc("button layer", "Normal") }, { value: 1, label: t("DPI-shift layer") }]} />
-      <section className="ss-panel buttons-panel">
-        <div className="scroller">
-          <h2 className="ss-title">{t("BUTTONS")}</h2>
-          <Boxed>
-            {BUTTON_ZONES.map((z, i) => (
-              <Row key={z} title={buttonName(i)} subtitle={profile ? describe(effective(i)) : ""} selected={i === sel} onClick={() => select(i)} />
-            ))}
-          </Boxed>
-          <h2 className="ss-title gap">{t("ACTION")}</h2>
+      <div className="panel-head">
+        <h2>{tc("page", "Buttons")}</h2>
+        <span className="spacer" />
+        <Segments<number> value={layer} onChange={setLayer} label={t("Used while a button set to DPI shift is held")}
+          options={[{ value: 0, label: tc("button layer", "Normal") }, { value: 1, label: t("DPI-shift layer") }]} />
+      </div>
+      <Boxed>
+        {BUTTON_ZONES.map((z, i) => (
+          <Row key={z} title={buttonName(i)} subtitle={profile ? describe(effective(i)) : ""} selected={i === sel} onClick={() => select(i)} />
+        ))}
+      </Boxed>
+      <FxCard title={buttonName(sel)} icon="buttons" value={profile ? <small>{describe(effective(sel))}</small> : undefined}
+        scene="remap" sceneValue={{ steps: [[BUTTON_ZONES[sel], iconOf(effective(sel))]] }}>
+          <h2 className="ss-title">{t("ACTION")}</h2>
           <div className="chips3">
             {KIND_CHIPS.map((c) => (
               <button key={c.kind} className={`ss-chip ${cur && c.kind === kind ? "on" : ""}`} aria-pressed={c.kind === kind}
@@ -134,8 +152,7 @@ export default function ButtonsPage() {
           {kind === "raw" && cur && <Boxed><Row title={t("Macro or custom data (kept as is)")} subtitle={hexText(cur)} /></Boxed>}
           {kind === "default" && profile && <p className="ss-hint">{f(t("Uses the factory action: %s"), describe(effective(sel)))}</p>}
           <button className="flat" disabled={!profile || !factory} onClick={() => factory && setAction(slotOf(factory, layer, sel))}>{t("Restore factory action")}</button>
-        </div>
-      </section>
+      </FxCard>
     </>
   );
 }

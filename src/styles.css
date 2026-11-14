@@ -350,6 +350,9 @@ details.fold > .fold-body { padding: 0 18px 18px; display: flex; flex-direction:
   .panel { overflow: visible; border-inline-start: 0; border-top: 1px solid var(--line); padding: 16px; }
   .profile-switch > button { min-width: 0; max-width: 200px; }
   .topbar button.save span { display: none; }
+  .savebar { padding: 10px 14px; gap: 10px; }
+  .savebar .ss-hint { display: none; }
+  .savebar button { white-space: nowrap; }
   .topbar button.save { padding: 0 14px; }
   .topbar { gap: 8px; padding: 8px 10px; }
 }

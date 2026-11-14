@@ -110,8 +110,12 @@ export function cursor(g: G, x: number, y: number, color = "#fff") {
   g.restore();
 }
 
-/** The app's icons plus a play/pause one. */
-export const ICONS: Record<string, string> = { ...ICON_PATHS, media: "M1 3L8 8L1 13Z M9.5 3H12V13H9.5Z M13.5 3H16V13H13.5Z" };
+/** The app's icons plus play/pause and a keyboard. */
+export const ICONS: Record<string, string> = {
+  ...ICON_PATHS,
+  media: "M1 3L8 8L1 13Z M9.5 3H12V13H9.5Z M13.5 3H16V13H13.5Z",
+  keyboard: "M1 3H15V13H1Z M3 5V7H5V5Z M6 5V7H8V5Z M9 5V7H11V5Z M12 5V7H14V5Z M3 8V10H5V8Z M6 8V10H8V8Z M9 8V10H11V8Z M12 8V10H14V8Z M5 11V12H11V11Z",
+};
 
 /** A 16x16 icon at (x, y), `size` px. */
 export function icon(g: G, name: string, x: number, y: number, size: number, color: string) {
