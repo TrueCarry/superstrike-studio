@@ -269,7 +269,57 @@ async function loadAll(d: Device, productId: number) {
   const edit = profiles[state.edit] ? state.edit : profiles[active] ? active : (dir[0]?.sector ?? -1);
   saved = { profiles: Object.fromEntries(Object.entries(profiles).map(([k, p]) => [k, cloneProfile(p)])), dir: dir.map((e) => ({ ...e })) };
   forced.clear();
+  liveOff = false;
   set({ status: "connected", info, dirRaw, dir, profiles, factory, active, edit, dirty: [], blank });
+  mouseHolds();
+}
+
+// ---------------------------------------------------------------- live sensor
+
+/** The sensor values the mouse runs now, as sent or loaded: the stage in use with its DPI and lift-off, and the report rate. */
+let sensorNow = { dpi: "", rate: -1 };
+let sensorTimer: ReturnType<typeof setTimeout> | undefined;
+/** The mouse refused a live DPI or rate: from then on they are felt after saving only. */
+let liveOff = false;
+
+const liveRate = (p: Profile, info: DeviceInfo) => (info.index === 0xff ? p.rateWired : p.rateWireless);
+const sensorOf = (p: Profile | undefined, info: DeviceInfo | null) =>
+  p && info ? { dpi: JSON.stringify([info.stage, p.stages[info.stage]]), rate: liveRate(p, info) } : { dpi: "", rate: -1 };
+
+/** After the mouse loads its memory (connect, save, stage or profile switch): it runs the saved values. */
+function mouseHolds() {
+  sensorNow = sensorOf(saved.profiles[state.active], state.info);
+  liveSensor();
+}
+
+/** Gives the sensor the active profile's DPI (of the stage in use) and report rate now, so an unsaved change is felt at once. */
+function liveSensor() {
+  clearTimeout(sensorTimer);
+  sensorTimer = setTimeout(async () => {
+    const p = state.profiles[state.active], info = state.info, want = sensorOf(p, info);
+    if (state.status !== "connected" || !device || liveOff || !p || !info || !want.dpi) return;
+    const st = p.stages[info.stage], was = sensorNow;
+    sensorNow = want;
+    try {
+      if (want.dpi !== was.dpi && st?.x) await device.dpiSet(st.x, st.y || st.x, st.lod);
+      if (want.rate !== was.rate && info.rates.includes(want.rate)) await device.rateSet(want.rate);
+    } catch {
+      liveOff = true;
+      toast(t("This mouse takes DPI and polling rate from its memory only: save to feel them"));
+    }
+  }, 120);
+}
+
+/** Every unsaved change is one the mouse already runs: the active profile's click feel, DPI of the stage in use and report rate. */
+export function unsavedFelt(s: State): boolean {
+  const p = s.profiles[s.active], was = saved.profiles[s.active], info = s.info;
+  if (!s.dirty.length || s.dirty.some((x) => x !== s.active) || liveOff || !p || !was || !info) return false;
+  const q = cloneProfile(was);
+  q.hits = p.hits;
+  q.stages[info.stage] = p.stages[info.stage];
+  if (info.index === 0xff) q.rateWired = p.rateWired;
+  else q.rateWireless = p.rateWireless;
+  return sameBytes(encodeProfile(q), encodeProfile(p));
 }
 
 // ---------------------------------------------------------------- unsaved changes
@@ -300,6 +350,7 @@ export async function discard() {
   forced.clear();
   set({ profiles, dir: saved.dir.map((e) => ({ ...e })) });
   refreshDirty();
+  liveSensor();
   const after = profiles[state.active];
   if (before && after && !state.blank) {
     const changed = [0, 1].filter((b) => JSON.stringify(before.hits[b]) !== JSON.stringify(after.hits[b]));
@@ -363,6 +414,7 @@ export function updateProfile(fn: (p: Profile) => void, sector = state.edit) {
   fn(p);
   set((s) => ({ profiles: { ...s.profiles, [sector]: p } }));
   refreshDirty();
+  if (sector === state.active) liveSensor();
 }
 
 /** Copies all settings of `from` into `sector` (keeps that profile's name). Unsaved until save(). */
@@ -400,33 +452,33 @@ export async function activateProfile(sector: number) {
   }
   const now = await run(async (d) => {
     await d.setCurrentProfile(sector);
-    return d.currentProfile();
+    return { sector: await d.currentProfile(), stage: await d.currentStage().catch(() => 0) };
   });
-  if (now === undefined) return;
-  set({ active: now, edit: now });
-  toast(f(t("Profile %d is now active"), slotOf(state, now) + 1));
+  if (now === undefined || !state.info) return;
+  set({ active: now.sector, edit: now.sector, info: { ...state.info, stage: now.stage } });
+  mouseHolds();
+  toast(f(t("Profile %d is now active"), slotOf(state, now.sector) + 1));
 }
 
-/** Switches the mouse to DPI stage n of the active profile now (a click on a stage chip). */
-export async function setStage(n: number) {
-  const ok = await run((d) => d.setCurrentStage(n));
-  if (ok === undefined || !state.info) return;
+/** Switches the mouse to DPI stage n of the active profile now (a click on a stage chip). Unsaved DPI values of that stage follow at once. */
+export async function setStage(n: number, quiet = false) {
+  const ok = await run((d) => d.setCurrentStage(n).then(() => true));
+  if (!ok || !state.info) return;
   set({ info: { ...state.info, stage: n } });
-  toast(state.dirty.includes(state.edit)
-    ? f(t("Mouse now uses stage %d — save (Ctrl+S) to feel your new DPI values"), n + 1)
-    : f(t("Mouse now uses stage %d"), n + 1));
+  mouseHolds();
+  if (!quiet) toast(f(t("Mouse now uses stage %d"), n + 1));
 }
 
 export async function setSurface(mode: number) {
-  const ok = await run((d) => d.surfaceSet(mode));
-  if (ok === undefined || !state.info) return;
+  const ok = await run((d) => d.surfaceSet(mode).then(() => true));
+  if (!ok || !state.info) return;
   set({ info: { ...state.info, surface: mode } });
   toast(t("Surface mode set"));
 }
 
 export async function setControlMode(mode: number) {
-  const ok = await run((d) => d.setOnboardMode(mode), "", (m) => f(t("Could not change the control mode: %s"), m));
-  if (ok === undefined || !state.info) return;
+  const ok = await run((d) => d.setOnboardMode(mode).then(() => true), "", (m) => f(t("Could not change the control mode: %s"), m));
+  if (!ok || !state.info) return;
   set({ info: { ...state.info, mode } });
   toast(t(mode === MODE_ONBOARD ? "Onboard memory mode" : "Host mode: saved profiles are ignored until you switch back"));
 }
@@ -515,6 +567,7 @@ export async function save() {
     return { profiles, dirRaw: result.dirWritten ?? s.dirRaw };
   });
   refreshDirty();
+  if (result.written.some((w) => w.sector === active)) mouseHolds();
   toast(t("Saved in the mouse — it now works without this app"));
 }
 

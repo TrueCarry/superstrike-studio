@@ -18,7 +18,7 @@ import ClickPage from "./pages/ClickPage";
 import DevicePage, { LanguagePicker } from "./pages/DevicePage";
 import ProfilesPage from "./pages/ProfilesPage";
 import {
-  autoConnect, connect, connectDemo, discard, getState, markDirty, save, setEdit, slotOf, useStore, type State,
+  autoConnect, connect, connectDemo, discard, getState, markDirty, save, setEdit, slotOf, unsavedFelt, useStore, type State,
 } from "./state/store";
 
 const TABS: { to: string; title: string; icon: IconName }[] = [
@@ -184,16 +184,20 @@ function EditedProfile() {
 function SaveBar() {
   const n = useStore((s) => (s.status === "connected" ? s.dirty.length : 0));
   const blank = useStore((s) => s.blank);
-  // keeps the last count while sliding away
-  const last = useRef(n);
-  if (n) last.current = n;
+  const felt = useStore(unsavedFelt);
+  // keeps the last count and wording while sliding away
+  const last = useRef({ n, felt });
+  if (n) last.current = { n, felt };
   return (
     <div className={`savebar-wrap ${n ? "open" : ""}`} aria-hidden={!n}>
       <div className="savebar-inner">
-        <div className="savebar" title={t("Only a preview until you save it into the mouse (Ctrl+S).")}>
+        <div className="savebar" title={t("Write the changes into the mouse memory (Ctrl+S)")}>
           <Icon name="save" size={22} />
           <div className="text">
-            <span className="heading">{f(tn("%d unsaved change", "%d unsaved changes", last.current), last.current)}</span>
+            <span className="heading">{f(tn("%d unsaved change", "%d unsaved changes", last.current.n), last.current.n)}</span>
+            <span className="ss-hint">{last.current.felt
+              ? t("Try them on your mouse now. Save to keep them, Discard to go back.")
+              : t("Some of them take effect only after you save.")}</span>
           </div>
           <button className="flat" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void discard()}>{t("Discard")}</button>
           <button className="suggested pill" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void save()} title={t("Write the changes into the mouse memory (Ctrl+S)")}>

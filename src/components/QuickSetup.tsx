@@ -6,7 +6,7 @@ import { Icon } from "./icons";
 import { Illustration } from "../illustrations/Illustration";
 import { BUILTIN_PRESETS, hitsCodeDecode } from "../model/profile";
 import { commit } from "../state/hits";
-import { currentProfile, getState, save, updateProfile, useStore } from "../state/store";
+import { currentProfile, getState, save, setEdit, setStage, updateProfile, useStore } from "../state/store";
 import { setStudio, useStudio } from "../state/studio";
 
 const DONE_KEY = "superstrike.setup";
@@ -42,6 +42,9 @@ export function QuickSetup() {
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
+    // set up the profile the mouse runs, so every choice is felt at once
+    const s = getState();
+    if (s.profiles[s.active]) setEdit(s.active);
     setStep(0);
     setFeel(null);
     setSpeed(null);
@@ -76,10 +79,11 @@ export function QuickSetup() {
   };
   const pickSpeed = (dpi: number) => {
     const v = dpiList.length ? dpiList.reduce((a, b) => (Math.abs(b - dpi) < Math.abs(a - dpi) ? b : a)) : dpi;
-    updateProfile((p) => {
-      const i = p.stages[p.defaultStage]?.x ? p.defaultStage : 0;
-      p.stages[i] = { ...p.stages[i], x: v, y: v, lod: p.stages[i].lod || 2 };
-    });
+    const s = getState(), p = currentProfile(s);
+    if (!p) return;
+    const i = p.stages[p.defaultStage]?.x ? p.defaultStage : 0;
+    if (s.edit === s.active && s.info?.stage !== i) void setStage(i, true);
+    updateProfile((q) => (q.stages[i] = { ...q.stages[i], x: v, y: v, lod: q.stages[i].lod || 2 }));
     setSpeed(dpi);
   };
   const finish = async () => {
@@ -105,7 +109,7 @@ export function QuickSetup() {
         <div className="setup-page" key={step}>
           {step === 0 && (
             <>
-              <p className="lead">{t("How should a click feel? Pick the one you like.")}</p>
+              <p className="lead">{t("How should a click feel? Pick one and click your mouse to feel it.")}</p>
               <div className="setup-choices">
                 {FEELS.map((c) => {
                   const h = feelHits(c.preset)![0];
@@ -123,7 +127,7 @@ export function QuickSetup() {
 
           {step === 1 && (
             <>
-              <p className="lead">{t("How far should the cursor go for the same hand move?")}</p>
+              <p className="lead">{t("How far should the cursor go for the same hand move? Pick one and move your mouse to feel it.")}</p>
               <div className="setup-speed">
                 <Illustration scene="speed" value={{ dpi: speed ?? 800, marks: SPEEDS }} label={t("Speed")} />
                 <div className="segments big" role="radiogroup" aria-label={t("Speed")}>

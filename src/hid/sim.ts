@@ -34,6 +34,7 @@ class Sim {
   profile = 1;
   stage = 1;
   rate = 6;
+  dpi = { x: 800, y: 800, lod: 1 };
   surface = 0;
   mode = MODE_ONBOARD;
   writeSector = -1;
@@ -101,6 +102,7 @@ class Sim {
         return true;
       case F.DPI: // 100, then every 50 up to 48000
         if (func === 2 && a[2] === 0) out.set([0x00, 0x64, 0xe0, 0x32, 0xbb, 0x80], 3);
+        else if (func === 6) this.dpi = { x: (a[1] << 8) | a[2], y: (a[3] << 8) | a[4], lod: a[5] };
         return true;
       case F.RATE:
         if (func === 1) out[1] = 0x7f;

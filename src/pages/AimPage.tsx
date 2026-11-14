@@ -69,6 +69,7 @@ export default function AimPage() {
   };
   const setDpi = (axis: "x" | "y", raw: number) => {
     const v = snapDpi(info.dpiList, raw, st[axis]);
+    if (live && info.stage !== sel) void setStage(sel, true);
     updateProfile((p) => {
       p.stages[sel][axis] = v;
       if (axis === "x" && !sep) p.stages[sel].y = v;
@@ -83,7 +84,7 @@ export default function AimPage() {
 
       <FxCard title={t("DPI stages")} icon="sensor" value={<>{on ? st.x : tc("DPI stage", "off")}<small>DPI</small></>}
         scene="speed" sceneValue={{ dpi: on ? st.x : 0, marks: enabledDpi }} tall>
-        <p className="ss-hint">{t("How far the cursor goes for the same hand move. Click a stage to switch the mouse to it now; new values are felt after saving. ★ = stage after power-on.")}</p>
+        <p className="ss-hint">{t("How far the cursor goes for the same hand move. Click a stage to switch the mouse to it; a new value is felt at once. ★ = stage after power-on.")}</p>
         <div className="stage-chips" role="radiogroup" aria-label={t("DPI stages")}>
           {profile.stages.map((s, i) => (
             <button key={i} role="radio" aria-checked={i === sel} className={`${i === sel ? "on" : ""} ${s.x ? "" : "dim"}`} onClick={() => clickChip(i)}>

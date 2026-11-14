@@ -38,4 +38,11 @@ describe("demo mouse", () => {
     await d.hitsSet(0, h);
     expect(await d.hitsGet(0)).toEqual(h);
   });
+
+  test("takes DPI and report rate live", async () => {
+    const d = await open();
+    await d.dpiSet(1250, 1300, 2);
+    await d.rateSet(3);
+    expect(await d.rateGet()).toBe(3);
+  });
 });

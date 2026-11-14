@@ -17,7 +17,7 @@ const SHOTS = {
   aim: { route: "#/aim?profile=3" },
   "aim-end": { route: "#/aim?profile=3", run: "document.querySelector('.panel').scrollTop = 1e6" },
   buttons: { route: "#/buttons?profile=4&press=1" },
-  "buttons-end": { route: "#/buttons?profile=4", run: "document.querySelector('.panel').scrollTop = 1e6" },
+  "buttons-end": { route: "#/buttons?profile=5", run: "document.querySelector('.panel .fx-card .boxed').lastElementChild.click()" },
   profiles: { route: "#/profiles?dirty=1" },
   "profiles-end": { route: "#/profiles", run: "document.querySelector('.panel').scrollTop = 1e6" },
   device: { route: "#/device" },
