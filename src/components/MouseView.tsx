@@ -4,84 +4,20 @@
 // glow and ripple, rolling wheel ribs with a direction arrow.
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { tc } from "../i18n/i18n";
+import { picture as pictureOf, type Picture, type View, type ZoneGeo } from "../illustrations/picture";
 import type { Zone } from "../model/tables";
 import { useStore } from "../state/store";
-import sideSvg from "../mouse_side.svg?raw";
-import topSvg from "../mouse_top.svg?raw";
 import { font, roundRect, text } from "./controls";
 import { ICON_PATHS } from "./icons";
 import { useMouseInput } from "./useMouseInput";
 
-export type View = "top" | "side";
+export type { View };
 export type Callouts = "none" | "lines" | "boxes";
 const VIEWS: View[] = ["top", "side"];
 export const ZONES: Record<View, Zone[]> = { top: ["btn-left", "btn-right", "btn-middle"], side: ["btn-forward", "btn-back", "btn-middle"] };
 const FLIP_MS = 450;
 
-// ---------------------------------------------------------------- the drawings
-
-interface Part {
-  kind: "body" | "wheel" | "line" | "brand" | "zone";
-  id: string;
-  width: number; // stroke width of lines
-  path: Path2D;
-}
-interface ZoneGeo {
-  path: Path2D;
-  cx: number; // centroid and top, in drawing units
-  cy: number;
-  top: number;
-  ok: boolean;
-}
-interface Picture {
-  w: number;
-  h: number;
-  parts: Part[];
-  zones: Map<string, ZoneGeo>; // the button zones and "wheel"
-}
-
-const attr = (s: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).exec(s)?.[1] ?? "";
-
-function parse(svg: string): Picture {
-  const [, w, h] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) ?? ["", "510", "993"];
-  const parts: Part[] = [];
-  const groups: string[] = [];
-  for (const m of svg.matchAll(/<g\b([^>]*)>|<\/g>|<path\b([^>]*?)\/?>/g)) {
-    if (m[0] === "</g>") groups.pop();
-    else if (m[1] !== undefined) groups.push(attr(m[1], "id"));
-    else {
-      const a = m[2], cls = attr(a, "class"), id = attr(a, "id");
-      const kind: Part["kind"] = cls.includes("zone") ? "zone" : cls.includes("body") ? "body" : cls.includes("wheel") ? "wheel"
-        : cls.includes("line") ? "line" : groups.includes("brand") ? "brand" : "line";
-      const width = cls.includes("bold") ? 7 : cls.includes("thin") ? 2.4 : 4;
-      parts.push({ kind, id, width, path: new Path2D(attr(a, "d")) });
-    }
-  }
-  const pic: Picture = { w: +w, h: +h, parts, zones: new Map() };
-  for (const p of parts) if (p.kind === "zone" || p.kind === "wheel") pic.zones.set(p.kind === "wheel" ? "wheel" : p.id, geometry(pic, p.path));
-  return pic;
-}
-
-/** Centroid and top of a zone, sampled every 3 drawing units like build_mask(). */
-function geometry(pic: Picture, path: Path2D): ZoneGeo {
-  const c = document.createElement("canvas");
-  c.width = Math.ceil(pic.w);
-  c.height = Math.ceil(pic.h);
-  const g = c.getContext("2d", { willReadFrequently: true })!;
-  g.fill(path);
-  const data = g.getImageData(0, 0, c.width, c.height).data;
-  let sx = 0, sy = 0, n = 0, top = 0;
-  for (let y = 0; y < c.height; y += 3)
-    for (let x = 0; x < c.width; x += 3)
-      if (data[(y * c.width + x) * 4 + 3] > 100) {
-        if (!n) top = y;
-        sx += x, sy += y, n++;
-      }
-  return { path, cx: n ? sx / n : 0, cy: n ? sy / n : 0, top, ok: n > 0 };
-}
-
-let pictures: Picture[] | null = null;
-const picture = (v: number) => (pictures ??= [parse(topSvg), parse(sideSvg)])[v];
+const picture = (v: number) => pictureOf(VIEWS[v]);
 
 // ---------------------------------------------------------------- helpers
 
