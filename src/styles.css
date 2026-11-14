@@ -111,12 +111,12 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .connect-hero .illustration { width: 100%; }
 .connect-screen h1 { margin: 8px 0 0; font-size: 32px; font-weight: 800; letter-spacing: -.01em; }
 .connect-screen .lead { margin: 0; font-size: 17px; opacity: .85; max-width: 560px; }
-.connect-screen .ss-hint { max-width: 520px; }
 .connect-screen .actions { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; margin-top: 6px; }
 button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: inline-flex; align-items: center; gap: 10px; }
-.connect-screen .linux { max-width: 620px; text-align: start; }
-.connect-screen pre { white-space: pre-wrap; background: rgb(0 0 0 / 30%); padding: 10px; border-radius: 8px; font-size: 12px; }
-.connect-screen summary { cursor: pointer; }
+.connect-screen .help-link { color: var(--dim); font-weight: 600; font-size: 13px; }
+.connect-help { max-width: 620px; text-align: start; display: flex; flex-direction: column; gap: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; animation: fade 180ms var(--ease); }
+.connect-help pre { white-space: pre-wrap; background: rgb(0 0 0 / 30%); padding: 10px; border-radius: 8px; font-size: 12px; margin: 0; }
+.connect-lang .lang-picker { background: rgb(0 0 0 / 22%); border-radius: 999px; padding: 4px 6px 4px 12px; }
 
 /* save bar: floats over the bottom of the panel while there are unsaved changes and never takes layout
    room; the panel keeps that much padding at its end, so nothing is covered */

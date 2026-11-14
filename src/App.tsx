@@ -1,7 +1,7 @@
 // The app: a connect screen with the hero animation, then the studio. The studio has a top bar (tabs,
 // edited profile, battery, save), the large mouse in the middle, the settings panel next to it, and the
 // bar that slides up while there are unsaved changes.
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router";
 import { batteryStateText } from "./hid/device";
 import { Dropdown } from "./components/controls";
@@ -219,6 +219,8 @@ function ConnectScreen() {
   const policy = doc.permissionsPolicy ?? doc.featurePolicy;
   const embedded = supported && policy !== undefined && !policy.allowsFeature("hid");
   const busy = status !== "disconnected";
+  const [help, setHelp] = useState(false);
+  const showHelp = help || !!error; // a failed connect opens the help on its own
   return (
     <div className="connect-screen">
       <div className="connect-lang"><LanguagePicker /></div>
@@ -227,13 +229,8 @@ function ConnectScreen() {
       </div>
       <h1>SuperStrike Studio Plus</h1>
       <p className="lead">{t("Tune the PRO X3 SUPERSTRIKE: click feel, aim and buttons, saved into the mouse.")}</p>
-      {!supported ? (
-        <p className="error">This browser has no WebHID. Use Chrome, Edge or another Chromium browser.</p>
-      ) : embedded ? (
-        <p className="error">WebHID is blocked here (embedded preview or iframe). Open {location.href} in a normal browser window.</p>
-      ) : (
-        <p className="ss-hint">Pick the LIGHTSPEED receiver ("USB Receiver") or the mouse on its cable. The browser remembers your choice.</p>
-      )}
+      {!supported && <p className="error">This browser has no WebHID. Use Chrome, Edge or another Chromium browser.</p>}
+      {embedded && <p className="error">WebHID is blocked here (embedded preview or iframe). Open {location.href} in a normal browser window.</p>}
       <div className="actions">
         {supported && !embedded && (
           <button className="suggested pill big" disabled={busy} onClick={() => void connect()}>
@@ -244,12 +241,17 @@ function ConnectScreen() {
       </div>
       {error && <p className="error">{error}</p>}
       {supported && !embedded && (
-        <details className="linux">
-          <summary className="ss-hint">Linux: the list is empty?</summary>
-          <p className="ss-hint">Your user needs access to the receiver. Add a udev rule, then replug the receiver:</p>
-          <pre>{`echo 'KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-superstrike.rules
+        <>
+          {!showHelp && <button className="flat help-link" onClick={() => setHelp(true)}>Trouble connecting?</button>}
+          {showHelp && (
+            <div className="connect-help">
+              <p className="ss-hint">Pick the LIGHTSPEED receiver ("USB Receiver") or the mouse on its cable. The browser remembers your choice.</p>
+              <p className="ss-hint">Linux: the list is empty? Your user needs access to the receiver. Add a udev rule, then replug the receiver:</p>
+              <pre>{`echo 'KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-superstrike.rules
 sudo udevadm control --reload-rules && sudo udevadm trigger`}</pre>
-        </details>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
