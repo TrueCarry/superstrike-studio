@@ -1,11 +1,16 @@
 // Setting cards: the illustration of what the setting does on top, the control underneath.
 import type { ReactNode } from "react";
+import { t } from "../i18n/i18n";
 import { Illustration } from "../illustrations/Illustration";
 import type { SceneName, SceneValue } from "../illustrations";
 import { Icon, type IconName } from "./icons";
 
+/**
+ * One setting: its animation on top (when it has one), then the icon, title and current value, then the
+ * controls. `live` marks a setting that the mouse takes at once, which never counts as unsaved.
+ */
 export function FxCard<N extends SceneName>(props: {
-  title: string; icon?: IconName; value?: ReactNode; scene?: N; sceneValue?: SceneValue<N>; className?: string; tall?: boolean; children?: ReactNode;
+  title: string; icon?: IconName; value?: ReactNode; scene?: N; sceneValue?: SceneValue<N>; className?: string; tall?: boolean; live?: boolean; children?: ReactNode;
 }) {
   return (
     <section className={`fx-card ${props.className ?? ""}`}>
@@ -18,6 +23,7 @@ export function FxCard<N extends SceneName>(props: {
         <div className="fx-head">
           {props.icon && <Icon name={props.icon} />}
           <h3>{props.title}</h3>
+          {props.live && <span className="ss-badge live" title={t("The mouse takes this at once. It is not part of a profile and needs no saving.")}>{t("Applies at once")}</span>}
           {props.value !== undefined && <span className="fx-value">{props.value}</span>}
         </div>
         {props.children}

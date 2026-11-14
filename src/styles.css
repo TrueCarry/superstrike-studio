@@ -130,6 +130,7 @@ button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: i
 .ss-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; background: rgb(255 255 255 / 8%); white-space: nowrap; }
 .ss-badge.accent { background: rgb(59 156 255 / 22%); color: var(--accent-fg); }
 .ss-badge.warn { background: rgb(255 163 72 / 20%); color: var(--warn); }
+.ss-badge.live { background: rgb(61 220 132 / 14%); color: var(--ok); cursor: help; }
 .hits-panel .ss-badge.warn { white-space: normal; align-self: flex-start; }
 .ss-chip { border-radius: 999px; padding: 6px 14px; background: var(--raised); font-weight: 700; min-height: 34px; }
 .ss-chip:hover:not(:disabled) { background: #454548; }

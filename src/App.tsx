@@ -18,7 +18,7 @@ import ClickPage from "./pages/ClickPage";
 import DevicePage, { LanguagePicker } from "./pages/DevicePage";
 import ProfilesPage from "./pages/ProfilesPage";
 import {
-  autoConnect, connect, connectDemo, getState, markDirty, revert, save, setEdit, slotOf, useStore, type State,
+  autoConnect, connect, connectDemo, discard, getState, markDirty, save, setEdit, slotOf, useStore, type State,
 } from "./state/store";
 
 const TABS: { to: string; title: string; icon: IconName }[] = [
@@ -197,7 +197,7 @@ function SaveBar() {
             <span className="ss-hint">{t("Only a preview until you save it into the mouse (Ctrl+S).")}</span>
           </div>
           <span className="spacer" />
-          <button className="flat" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void revert()}>{t("Discard")}</button>
+          <button className="flat" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void discard()}>{t("Discard")}</button>
           <button className="suggested pill" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void save()} title={t("Write the changes into the mouse memory (Ctrl+S)")}>
             {t("Save to mouse")}{blank ? "…" : ""}
           </button>
