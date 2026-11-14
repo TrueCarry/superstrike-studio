@@ -2,10 +2,9 @@
 // states as the native app's docs/screenshots (upstream tools/screenshots/capture.sh), and writes
 // tools/parity/out/report.html with native and web side by side, overlaid, and as a difference.
 //   node tools/parity/shots.mjs [name ...]      (default: every shot)
-//   node tools/parity/shots.mjs --readme        (the README screenshots, into docs/screenshots/)
 // Uses the dev server on 127.0.0.1:8017 when it runs, otherwise starts one. No extra packages.
 import { execFileSync } from "node:child_process";
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT, SERVER, ensureServer, findBrowser } from "./chrome.mjs";
 
@@ -69,9 +68,7 @@ img{width:100%;display:block;border:1px solid #333}
 ${rows}`;
 }
 
-const args = process.argv.slice(2);
-const readme = args.includes("--readme");
-const picked = args.filter((a) => a !== "--readme");
+const picked = process.argv.slice(2);
 const names = picked.length ? picked : Object.keys(SHOTS);
 for (const n of names) if (!SHOTS[n]) throw new Error(`unknown shot "${n}". Known: ${Object.keys(SHOTS).join(", ")}`);
 const browser = findBrowser();
@@ -85,12 +82,6 @@ try {
   }
 } finally {
   server?.kill();
-}
-if (readme) {
-  const docs = join(ROOT, "docs/screenshots");
-  mkdirSync(docs, { recursive: true });
-  for (const n of names) copyFileSync(join(OUT, `web-${n}.png`), join(docs, `${n}.png`));
-  console.log(`README screenshots: ${docs}`);
 }
 writeFileSync(join(OUT, "report.html"), report(names));
 console.log(`Report: ${join(OUT, "report.html")}`);

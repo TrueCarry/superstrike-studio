@@ -9,13 +9,14 @@
 The lightweight G HUB alternative for the Logitech **PRO X3** and **PRO X2 SUPERSTRIKE**.<br>
 Tune it, save it into the mouse, close the tab. Nothing to install, nothing left running.
 
-[![Open SuperStrike Studio Plus](https://img.shields.io/badge/Open_SuperStrike_Studio_Plus-3b9cff?style=for-the-badge)](https://truecarry.github.io/superstrike-studio/)
-&nbsp;
-[![Try the demo, no mouse needed](https://img.shields.io/badge/Try_the_demo-no_mouse_needed-444?style=for-the-badge)](https://truecarry.github.io/superstrike-studio/?demo)
+<a href="https://truecarry.github.io/superstrike-studio/"><img src="https://img.shields.io/badge/Open_the_app-3b9cff?style=for-the-badge" alt="Open the app"></a>&nbsp;<a href="https://truecarry.github.io/superstrike-studio/?demo"><img src="https://img.shields.io/badge/Try_the_demo-444?style=for-the-badge" alt="Try the demo, no mouse needed"></a>
 
-<img src="docs/screenshots/hits.png" width="860" alt="Actuation point on a press-travel bar, left and right values on the mouse, click test pad and the Save to mouse button">
+<img src="docs/illustrations/hero.gif" width="720" alt="The mouse showing each setting in turn: click point, rapid trigger, click haptics, sensor, buttons and profiles">
 
-**0** installs &nbsp;·&nbsp; **0** background apps &nbsp;·&nbsp; **0** accounts &nbsp;·&nbsp; **5** profiles in the mouse &nbsp;·&nbsp; **21** languages &nbsp;·&nbsp; **free**
+✓ **No install** &nbsp;&nbsp; ✓ **Nothing in the background** &nbsp;&nbsp; ✓ **No account** &nbsp;&nbsp; ✓ **Free and open source**
+
+<sub>English · 简体中文 · 繁體中文 · 日本語 · 한국어 · Русский · Українська · Español · Português · Français · Deutsch ·
+Italiano · Polski · Türkçe · العربية · हिन्दी · বাংলা · اردو · Bahasa Indonesia · Tiếng Việt · ไทย</sub>
 
 </div>
 
@@ -23,16 +24,12 @@ Tune it, save it into the mouse, close the tab. Nothing to install, nothing left
 
 ## Set it once. Forget the software.
 
-You bought a top mouse. Keeping it the way you like shouldn't need a heavy app running all day.
-
-SuperStrike Studio Plus writes every setting **into the mouse itself**. Press **Save to mouse** and
-close the page: no tray icon, no service, no updater, no account. The mouse works the same on every
-PC, at home, at work or on a laptop, and no software update can change how it feels overnight.
+Every setting is saved **into the mouse itself**. Close the tab: no tray icon, no service, no
+account, and no update can change how your mouse feels overnight.
 
 ## Make the click yours
 
-The SUPERSTRIKE has no ordinary switch: magnetic sensors and a haptic motor replace it. That gives
-you three dials for each main button.
+Three dials for each main button. Feel every change live, or start from a preset or a HITS code.
 
 <table>
   <tr>
@@ -41,34 +38,38 @@ you three dials for each main button.
     <td width="33%"><img src="docs/illustrations/haptics.gif" alt="Six clicks, from no vibration to a firm thump"></td>
   </tr>
   <tr>
-    <td><b>Actuation point</b><br>How far you press before the click counts: 1 hair-trigger … 10 deep</td>
-    <td><b>Rapid trigger</b><br>Lift a hair and click again, no full release: 1 fastest … 5 slowest, or off</td>
-    <td><b>Click haptics</b><br>How strong the click feels under your finger: 0 silent … 5 strongest</td>
+    <td><b>Actuation point</b><br>Click on a light touch, or only on a deep press</td>
+    <td><b>Rapid trigger</b><br>Click again without lifting your finger all the way</td>
+    <td><b>Click haptics</b><br>From silent to a firm thump under your finger</td>
   </tr>
 </table>
-
-Change a value and the mouse reacts **instantly**, before you save. The built-in test pad counts
-your clicks per second and how long you held, so you choose by feel, not by guessing.
-
-Not sure where to start? Pick a ready preset: from a **light, fast click** to a **deep, deliberate
-press** or a **silent feel**, plus the published setups of well-known pro players. Got a **HITS
-code** from G HUB or a friend? Paste it in. Want to share yours? One click copies it.
 
 ## The whole mouse, not just the click
 
+Sensor, buttons and profiles, all saved in the mouse.
+
 <table>
   <tr>
-    <td width="50%"><img src="docs/screenshots/buttons.png" alt="Buttons"><br><b>Every button</b>: keys and shortcuts with modifiers, media keys, DPI and profile switching, a second layer while you hold DPI shift</td>
-    <td width="50%"><img src="docs/screenshots/sensor.png" alt="Sensor"><br><b>Sensor</b>: five DPI stages up to 48 000, polling up to 8 000 Hz, lift-off distance, angle snapping, power saving</td>
+    <td width="33%"><img src="docs/illustrations/polling.gif" alt="The same hand movement: at a low polling rate the cursor jumps in steps, at a high one it glides smoothly"></td>
+    <td width="33%"><img src="docs/illustrations/dpi.gif" alt="The same hand movement: at normal DPI the cursor overshoots the target, holding DPI shift it lands on it"></td>
+    <td width="33%"><img src="docs/illustrations/remap.gif" alt="The wheel and thumb buttons each do something else: DPI change, play/pause, copy"></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/profiles.png" alt="Profiles"><br><b>Five profiles</b>: one for work, one for play, one for travel… switch with a mouse button</td>
-    <td><img src="docs/screenshots/hits-presets.png" alt="Presets"><br><b>Presets</b>: built-in, pro and your own, one click each</td>
+    <td><b>Polling rate</b><br>The cursor follows your hand without steps</td>
+    <td><b>DPI shift</b><br>Hold a button to slow down for a precise shot</td>
+    <td><b>Any button, any action</b><br>Keys, shortcuts, media, DPI or profile switching</td>
+  </tr>
+  <tr>
+    <td><img src="docs/illustrations/profiles.gif" alt="One button press switches click point, speed and click strength together"></td>
+    <td><img src="docs/illustrations/snap.gif" alt="The same shaky hand: without angle snapping the line wobbles, with it the line is straight"></td>
+    <td><img src="docs/illustrations/lod.gif" alt="Lifting the mouse to reposition it: set high, the cursor drifts back; set low, it stays put"></td>
+  </tr>
+  <tr>
+    <td><b>Five profiles</b><br>One button switches everything at once</td>
+    <td><b>Angle snapping</b><br>Straight lines from a not-quite-straight hand</td>
+    <td><b>Lift-off distance</b><br>Lift the mouse and the cursor stays put</td>
   </tr>
 </table>
-
-Each profile keeps its own click feel, buttons, DPI and polling rate. Copy one, export it as a
-file, or back up the whole mouse and restore it later.
 
 ## Up and running in a minute
 
@@ -81,24 +82,19 @@ lets go of the receiver.
 
 ## Plus vs G HUB
 
-| | **SuperStrike Studio Plus** | Logitech G HUB |
+| | **Plus** | **G HUB** |
 |---|:-:|:-:|
-| Set up | **open a link** | download and install |
-| Running in the background | **nothing** | background service unless you turn it off |
-| Account | **never** | optional |
-| Updates | **automatic: always the latest page** | updater in the background |
-| Windows · macOS · Linux | **✅ ✅ ✅** | ✅ ✅ ❌ |
-| Actuation, rapid trigger, haptics | ✅ | ✅ |
-| Haptics saved in the mouse | ✅ | ❌ ¹ |
-| Presets and HITS codes | ✅ | ✅ |
-| Live click test pad | ✅ | ➖ |
-| Try it without the mouse | ✅ | ❌ |
+| Actuation, rapid trigger, haptics, presets | ✅ | ✅ |
+| Buttons, DPI, polling rate, profiles | ✅ | ✅ |
+| Opens in the browser, no install | ✅ | ❌ |
+| Closes with the tab, no background service | ✅ | ❌ |
+| Windows, macOS and Linux | ✅ | ❌ |
+| Try it without a mouse | ✅ | ❌ |
+| Haptics saved in the mouse | ✅ | ❌ |
+| Clicks-per-second test pad | ✅ | ❌ |
 | Lighting, macros, other Logitech gear | ❌ | ✅ |
-| Price | free, open source | free |
 
-<sub>¹ In tests with a PRO X3 SUPERSTRIKE by the SuperStrike Studio authors. ➖ G HUB shows a press
-meter, not a click counter. Need lighting, macros or other Logitech devices? G HUB does far more —
-Plus does one mouse, and does it lightly. Spotted something wrong? [Tell us](https://github.com/TrueCarry/superstrike-studio/issues).</sub>
+<sub>Need lighting or macros? G HUB is the better fit.</sub>
 
 ## Questions
 
@@ -133,45 +129,13 @@ welcome.
 
 <div align="center">
 
-[![Open SuperStrike Studio Plus](https://img.shields.io/badge/Open_SuperStrike_Studio_Plus-3b9cff?style=for-the-badge)](https://truecarry.github.io/superstrike-studio/)
-
-<sub>English · 简体中文 · 繁體中文 · 日本語 · 한국어 · Русский · Українська · Español · Português · Français · Deutsch ·
-Italiano · Polski · Türkçe · العربية · हिन्दी · বাংলা · اردو · Bahasa Indonesia · Tiếng Việt · ไทย</sub>
+<a href="https://truecarry.github.io/superstrike-studio/"><img src="https://img.shields.io/badge/Open_the_app-3b9cff?style=for-the-badge" alt="Open the app"></a>&nbsp;<a href="https://truecarry.github.io/superstrike-studio/?demo"><img src="https://img.shields.io/badge/Try_the_demo-444?style=for-the-badge" alt="Try the demo, no mouse needed"></a>
 
 </div>
 
 ---
 
-<details>
-<summary><b>For developers</b></summary>
-
-Needs [Bun](https://bun.sh).
-
-```sh
-bun install
-bun run dev          # http://127.0.0.1:8017 (add ?demo for the demo mouse)
-bun test             # profile format, HITS codes, demo mouse, translations
-bun run build        # static site in dist/, works from any folder (hash routes)
-bun run screenshots  # README screenshots with the demo mouse, into docs/screenshots/
-```
-
-Every push to `main` is tested, built and published to GitHub Pages by
-[.github/workflows/pages.yml](.github/workflows/pages.yml).
-
-| Path | |
-|---|---|
-| `src/hid/` | HID++ 2.0 over WebHID: framing, request queue, device features, memory sectors, demo mouse |
-| `src/model/` | Onboard profile format, button actions, directory, HITS codes, backups |
-| `src/state/store.ts` | App state and every action that talks to the mouse |
-| `src/pages/`, `src/components/` | React UI (React Router), mouse drawing, controls |
-| `src/i18n/` | gettext catalogs loader: `t()`, `tc()` (context), `tn()` (plural), `f()` (printf) |
-| `po/` | Translations (`.po`, one per language) and the template `superstrike-studio.pot` |
-| `tools/parity/` | Screenshot and string comparison against the native app |
-
-UI text goes through `t("English text")` (or `tc("context", …)`) and is looked up in the gettext
-catalogs in `po/` by its exact English text; a string without a translation shows in English.
-
-</details>
+**Developers.** Building, testing and the code layout: [CONTRIBUTING.md](CONTRIBUTING.md).
 
 **Credits.** Made by TrueCarry and thekiba. Built on
 [SuperStrike Studio](https://github.com/Adhamura/superstrike-studio) by the SuperStrike Studio

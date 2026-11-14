@@ -9,7 +9,7 @@
     "preview": "bun --bun vite preview",
     "test": "bun test",
     "parity:shots": "node tools/parity/shots.mjs",
-    "screenshots": "node tools/parity/shots.mjs --readme",
+    "illustrations": "node tools/readme/illustrations.mjs",
     "parity:strings": "node tools/parity/strings.mjs"
   },
   "dependencies": {

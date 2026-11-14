@@ -1,4 +1,4 @@
-// Renders the README illustrations (tools/readme/scenes.html, on the app's src/mouse_top.svg) frame by frame in headless Chrome and
+// Renders the README illustrations (tools/readme/scenes.html, on the app's src/mouse_*.svg) frame by frame in headless Chrome and
 // writes them as looping GIFs to docs/illustrations/.
 //   node tools/readme/illustrations.mjs [scene ...]      (default: every scene)
 import { spawn } from "node:child_process";
@@ -58,14 +58,17 @@ const chrome = spawn(findBrowser(), [
 try {
   const cdp = await session(await connect());
   while (!(await cdp.evaluate("typeof window.render === 'function'"))) await new Promise((r) => setTimeout(r, 100));
-  await cdp.evaluate(`load(${JSON.stringify(readFileSync(join(ROOT, "src/mouse_top.svg"), "utf8"))})`);
+  const icons = Object.fromEntries([...readFileSync(join(ROOT, "src/components/icons.tsx"), "utf8").matchAll(/^\s+(\w+): "(M[^"]+)"/gm)].map((m) => [m[1], m[2]]));
+  await cdp.evaluate(`Object.assign(ICONS, ${JSON.stringify(icons)})`);
+  for (const view of ["top", "side"])
+    await cdp.evaluate(`load("${view}", ${JSON.stringify(readFileSync(join(ROOT, `src/mouse_${view}.svg`), "utf8"))})`);
   const scenes = await cdp.evaluate("window.scenes");
-  const [W, H] = await cdp.evaluate("window.size");
   const picked = process.argv.slice(2);
   for (const n of picked) if (!scenes[n]) throw new Error(`unknown scene "${n}". Known: ${Object.keys(scenes).join(", ")}`);
   mkdirSync(OUT, { recursive: true });
   for (const name of picked.length ? picked : Object.keys(scenes)) {
-    const count = Math.round(scenes[name] * FPS);
+    const { duration, size: [W, H] } = scenes[name];
+    const count = Math.round(duration * FPS);
     const frames = [];
     for (let i = 0; i < count; i++) {
       const b64 = await cdp.evaluate(`render(${JSON.stringify(name)}, ${i / FPS})`);
