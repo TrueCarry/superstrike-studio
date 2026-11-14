@@ -5,10 +5,10 @@ import type { Scene } from "../../src/illustrations/scene";
 
 const c = document.getElementById("c") as HTMLCanvasElement;
 const g = c.getContext("2d", { willReadFrequently: true })!;
-const get = (name: string) => [SCENES[name as SceneName] as unknown as Scene<unknown>, README[name as SceneName]] as const;
+const get = (name: string) => [SCENES[name as SceneName] as unknown as Scene<unknown>, README[name as keyof typeof README]] as const;
 
 Object.assign(window, {
-  scenes: Object.fromEntries(Object.keys(SCENES).map((n) => {
+  scenes: Object.fromEntries(Object.keys(README).map((n) => {
     const [s, v] = get(n);
     return [n, { duration: s.duration, size: s.size(v) }];
   })),

@@ -294,6 +294,38 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .card .name:focus { background: rgb(0 0 0 / 25%); outline: 2px solid rgb(59 156 255 / 60%); }
 .card .name::placeholder { color: var(--text); opacity: 1; }
 .card .line { display: flex; align-items: center; gap: 8px; }
+.card .summary { display: flex; gap: 14px; flex-wrap: wrap; font-weight: 800; font-variant-numeric: tabular-nums; }
+.card .summary span { display: inline-flex; align-items: center; gap: 5px; }
+.card .summary .ico { color: var(--accent); }
+.card .summary .rt .ico { color: var(--orange); }
+.panel .cards { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+
+/* feel library */
+.feel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.feel-card { background: var(--scene); border: 1px solid var(--line); border-radius: 14px; padding: 6px 10px 10px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); min-width: 0; }
+.feel-card:hover { border-color: rgb(59 156 255 / 60%); }
+.feel-card:active { transform: scale(.98); }
+.feel-card:focus-visible { outline: 2px solid rgb(59 156 255 / 60%); outline-offset: 1px; }
+.feel-card .illustration { width: 100%; }
+.feel-name { display: flex; align-items: center; gap: 4px; font-weight: 800; min-height: 34px; }
+.feel-name span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feel-card .ss-hint { font-size: 11.5px; white-space: pre-wrap; }
+.card .summary { display: flex; gap: 14px; flex-wrap: wrap; font-weight: 800; font-variant-numeric: tabular-nums; }
+.card .summary span { display: inline-flex; align-items: center; gap: 5px; }
+.card .summary .ico { color: var(--accent); }
+.card .summary .rt .ico { color: var(--orange); }
+.panel .cards { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+
+/* feel library */
+.feel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.feel-card { background: var(--scene); border: 1px solid var(--line); border-radius: 14px; padding: 6px 10px 10px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); min-width: 0; }
+.feel-card:hover { border-color: rgb(59 156 255 / 60%); }
+.feel-card:active { transform: scale(.98); }
+.feel-card:focus-visible { outline: 2px solid rgb(59 156 255 / 60%); outline-offset: 1px; }
+.feel-card .illustration { width: 100%; }
+.feel-name { display: flex; align-items: center; gap: 4px; font-weight: 800; min-height: 34px; }
+.feel-name span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feel-card .ss-hint { font-size: 11.5px; white-space: pre-wrap; }
 .card .foot { display: flex; align-items: center; gap: 8px; }
 
 /* ---------------------------------------------------------------- Device */

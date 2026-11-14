@@ -2,15 +2,19 @@
 // Web additions: the factory-state notice, and automatic backups kept in this browser (native wrote them to a folder).
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { Boxed, Column, ComboRow, MenuButton, Row, Switch } from "../components/controls";
+import { Boxed, ComboRow, IconButton, MenuButton, Row, Switch } from "../components/controls";
 import { confirmDialog } from "../components/dialogs";
+import { Icon } from "../components/icons";
 import { MODE_HOST, MODE_ONBOARD } from "../hid/device";
 import { f, t, tc } from "../i18n/i18n";
+import { Illustration } from "../illustrations/Illustration";
 import { download, listAutoBackups, stamp, type StoredBackup } from "../model/backup";
-import { FACTORY_SECTOR, profileFromJson, profileToJson } from "../model/profile";
+import { BUILTIN_PRESETS, FACTORY_SECTOR, PRO_PRESETS, hitsCodeDecode, presetName, profileFromJson, profileToJson, type Preset } from "../model/profile";
+import { applyPreset, copyCode, importCode, saveCurrent, summary } from "../state/hits";
 import {
-  activateProfile, backupNow, getState, replaceProfile, restoreBackup, setControlMode, setDirEnabled, setEdit, toast, updateProfile, useStore,
+  activateProfile, backupNow, deletePreset, getState, replaceProfile, restoreBackup, setControlMode, setDirEnabled, setEdit, toast, updateProfile, useStore,
 } from "../state/store";
+import { setStudio, useStudio } from "../state/studio";
 
 /** Opens a file picker and resolves with the chosen file's text. */
 function pickFile(input: HTMLInputElement | null): Promise<string | null> {
@@ -39,8 +43,12 @@ export default function ProfilesPage() {
   };
 
   return (
-    <div className="scroll">
-      <Column>
+    <>
+      <div className="panel-head">
+        <h2>{tc("page", "Profiles")}</h2>
+        <span className="spacer" />
+        <button className="suggested pill" onClick={() => setStudio({ setup: true })}>{t("Quick setup")}</button>
+      </div>
         {blank ? (
           <section className="ss-panel">
             <h2 className="ss-title">FACTORY STATE</h2>
@@ -57,13 +65,63 @@ export default function ProfilesPage() {
             <div className="cards">
               {dir.map((e, slot) => <Card key={e.sector} slot={slot} fileInput={fileInput} />)}
             </div>
-            <ControlMode />
           </>
         )}
+        <FeelLibrary />
+        <ControlMode />
         <BackupPanel fileInput={fileInput} autoBackups={autoBackups} confirmRestore={confirmRestore} />
         <input ref={fileInput} type="file" accept=".json,application/json" hidden />
-      </Column>
-    </div>
+    </>
+  );
+}
+
+/** Built-in, own and pro presets, each card playing its own click feel. A click applies it to the edited profile. */
+function FeelLibrary() {
+  const user = useStore((s) => s.presets);
+  const target = useStudio((s) => s.target);
+  const card = (p: Preset, name: string, onDelete?: () => void) => {
+    const v = hitsCodeDecode(p.code);
+    if (typeof v === "string") return null;
+    const h = v[target === "right" ? 1 : 0];
+    return (
+      <div key={`${name}:${p.code}`} className="feel-card" role="button" tabIndex={0} title={f(t("HITS code %s"), p.code)}
+        onClick={() => applyPreset(name, v)} onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && e.target === e.currentTarget && (e.preventDefault(), applyPreset(name, v))}>
+        <Illustration scene="feel" value={{ act: h.act, rt: h.rtOn ? h.rt : 0, hap: h.hap }} label={name} />
+        <div className="feel-name">
+          <span>{name}</span>
+          {onDelete && <IconButton icon="trash" tooltip={t("Delete preset")} onClick={onDelete} />}
+        </div>
+        <span className="ss-hint">{summary(v)}</span>
+      </div>
+    );
+  };
+  return (
+    <section className="fx-card">
+      <div className="fx-body">
+        <div className="fx-head">
+          <Icon name="hits" />
+          <h3>{t("Feel library")}</h3>
+          <span className="spacer" />
+          <MenuButton icon="code" tooltip={t("HITS code")}>
+            {(close) => (
+              <>
+                <button onClick={() => (close(), void copyCode())}>{t("Copy HITS code")}</button>
+                <button onClick={() => (close(), void importCode())}>{t("Import HITS code…")}</button>
+              </>
+            )}
+          </MenuButton>
+        </div>
+        <p className="ss-hint">{t("Click a feel to try it on the profile you are editing.")}</p>
+        <h4 className="ss-title">{t("YOUR PRESETS")}</h4>
+        <div className="feel-grid">
+          {BUILTIN_PRESETS.map((p) => card(p, presetName(p)))}
+          {user.map((p) => card(p, p.name, () => deletePreset(p.name)))}
+        </div>
+        <button onClick={() => void saveCurrent()}>{t("Save current as preset…")}</button>
+        <h4 className="ss-title gap">{t("PRO PRESETS")}</h4>
+        <div className="feel-grid">{PRO_PRESETS.map((p) => card(p, p.name))}</div>
+      </div>
+    </section>
   );
 }
 
@@ -121,6 +179,14 @@ function Card(props: { slot: number; fileInput: React.RefObject<HTMLInputElement
         {active && <span className="ss-badge accent">{tc("profile badge", "Active")}</span>}
         {unsaved && <span className="ss-badge warn">{t("Unsaved")}</span>}
       </div>
+      {p && (
+        <div className="summary" aria-label={t("Summary")}>
+          <span title={t("Actuation")}><Icon name="actuation" />{p.hits[0].act}</span>
+          <span title="DPI"><Icon name="sensor" />{p.stages[p.defaultStage]?.x || "—"}</span>
+          <span title={t("Haptics")}><Icon name="haptics" />{p.hits[0].hap}</span>
+          {p.hits[0].rtOn && <span className="rt" title={t("Rapid trigger")}><Icon name="rapid" />{p.hits[0].rt}</span>}
+        </div>
+      )}
       <input className="name" key={p?.name} defaultValue={p?.name || slotText(slot)} maxLength={24} aria-label={slotText(slot)} disabled={!p}
         onFocus={(e) => e.currentTarget.select()}
         onBlur={(e) => rename(e.currentTarget.value)}
