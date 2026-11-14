@@ -1,8 +1,11 @@
-import { ACCENT, clear, clicks, ease, glowOf, mouse, mouseW, pills, seg } from "./engine";
+import { ACCENT, clear, clicks, ease, glowOf, mouse, mouseW, pills, seg, zonesOf, type Target } from "./engine";
 import { scene } from "./scene";
 
-/** Clicks with the mouse shaking for the click strength: `level` 0..5, or every level in turn when unset. */
-export const haptics = scene<{ level?: number }>({
+/**
+ * Clicks with the mouse shaking for the click strength: `level` 0..5, or every level in turn when unset.
+ * `on` picks the button pressed: left, right or both (default left).
+ */
+export const haptics = scene<{ level?: number; on?: Target }>({
   duration: 3.9,
   still: 3.24,
   size: (v) => [v.level === undefined ? 480 : 300, 360],
@@ -19,7 +22,7 @@ export const haptics = scene<{ level?: number }>({
     const age = c.times.length ? t - c.times.at(-1)! : 9;
     const buzz = level * 1.3 * Math.sin(age * 2 * Math.PI * 24) * Math.exp(-age * 9);
     const mw = mouseW(290);
-    const m = mouse(g, (w - mw) / 2 + buzz, 18, 290, { press: depth(t), glow: glowOf(c, t), ripples: c.times.map((s) => [t - s, ACCENT]) });
+    const m = mouse(g, (w - mw) / 2 + buzz, 18, 290, { zones: zonesOf(v.on), press: depth(t), glow: glowOf(c, t), ripples: c.times.map((s) => [t - s, ACCENT]) });
     if (age < 0.45)
       for (let i = 0; i < level; i++) {
         g.strokeStyle = ACCENT;

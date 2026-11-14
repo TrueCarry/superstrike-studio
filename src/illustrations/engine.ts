@@ -23,10 +23,16 @@ export function clear(g: G, w: number, h: number) {
 /** Width of the mouse drawn `h` px high. */
 export const mouseW = (h: number, view: View = "top") => (picture(view).w * h) / picture(view).h;
 
+/** Which main buttons a click setting is shown on. */
+export type Target = "left" | "right" | "both";
+export const zonesOf = (t: Target = "left") => (t === "both" ? ["btn-left", "btn-right"] : [t === "right" ? "btn-right" : "btn-left"]);
+
 export interface MouseOpts {
   view?: View;
   /** the button that press, glow and ripples apply to (default the left button) */
   zone?: string;
+  /** several buttons pressed together; overrides `zone` */
+  zones?: string[];
   press?: number;
   glow?: number;
   /** [age in s, colour] per ripple */
@@ -36,9 +42,9 @@ export interface MouseOpts {
   shell?: string;
 }
 
-/** The mouse `h` px high with its top-left at (x, y). Returns where its button `zone` sits. */
+/** The mouse `h` px high with its top-left at (x, y). Returns where its (first) pressed button sits. */
 export function mouse(g: G, x: number, y: number, h: number, o: MouseOpts = {}) {
-  const pic = picture(o.view ?? "top"), zone = pic.zones.get(o.zone ?? "btn-left")!;
+  const pic = picture(o.view ?? "top"), names = o.zones ?? [o.zone ?? "btn-left"];
   const s = h / pic.h, w = pic.w * s;
   g.save(); // floor shadow
   g.translate(x + w / 2, y + h * 0.98);
@@ -63,29 +69,33 @@ export function mouse(g: G, x: number, y: number, h: number, o: MouseOpts = {}) 
     g.roundRect(sx - 3, sy - 40 * s, 6, 80 * s, 3);
     g.fill();
   }
-  g.save();
-  g.translate(x, y);
-  g.scale(s, s);
-  g.clip(zone.path);
-  g.scale(1 / s, 1 / s);
-  g.translate(-x, -y);
-  const bx = x + zone.cx * s, by = y + zone.cy * s;
-  g.fillStyle = `rgba(0,0,0,${0.18 * (o.press ?? 0)})`;
-  g.fillRect(x, y, w, h);
-  g.fillStyle = rgba(ACCENT, 0.55 * (o.glow ?? 0));
-  g.fillRect(x, y, w, h);
-  for (const [age, color] of o.ripples ?? []) {
-    const k = age / 0.6;
-    if (k < 0 || k >= 1) continue;
-    dot(g, bx, by, 6 + w * 0.45 * (1 - (1 - k) * (1 - k)));
-    g.fillStyle = rgba(color, 0.3 * (1 - k));
-    g.fill();
-    g.strokeStyle = `rgba(255,255,255,${0.75 * (1 - k)})`;
-    g.lineWidth = 3;
-    g.stroke();
+  for (const name of names) {
+    const zone = pic.zones.get(name)!;
+    g.save();
+    g.translate(x, y);
+    g.scale(s, s);
+    g.clip(zone.path);
+    g.scale(1 / s, 1 / s);
+    g.translate(-x, -y);
+    const bx = x + zone.cx * s, by = y + zone.cy * s;
+    g.fillStyle = `rgba(0,0,0,${0.18 * (o.press ?? 0)})`;
+    g.fillRect(x, y, w, h);
+    g.fillStyle = rgba(ACCENT, 0.55 * (o.glow ?? 0));
+    g.fillRect(x, y, w, h);
+    for (const [age, color] of o.ripples ?? []) {
+      const k = age / 0.6;
+      if (k < 0 || k >= 1) continue;
+      dot(g, bx, by, 6 + w * 0.45 * (1 - (1 - k) * (1 - k)));
+      g.fillStyle = rgba(color, 0.3 * (1 - k));
+      g.fill();
+      g.strokeStyle = `rgba(255,255,255,${0.75 * (1 - k)})`;
+      g.lineWidth = 3;
+      g.stroke();
+    }
+    g.restore();
   }
-  g.restore();
-  return { bx, by, top: y + zone.top * s, bottom: y + zone.bottom * s, w };
+  const zone = pic.zones.get(names[0])!;
+  return { bx: x + zone.cx * s, by: y + zone.cy * s, top: y + zone.top * s, bottom: y + zone.bottom * s, w };
 }
 
 /** The pointer arrow with its tip at (x, y). */

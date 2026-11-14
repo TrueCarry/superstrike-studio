@@ -86,7 +86,15 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .studio { --panel-w: clamp(440px, 36vw, 600px); flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-w); position: relative; }
 .stage-mouse { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 8px 16px 16px; background: radial-gradient(circle at 50% 45%, rgb(59 156 255 / 7%), transparent 60%); }
 .stage-mouse .mouseview { flex: 1; }
-.stage-foot { flex: none; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.stage-foot { flex: none; min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap; }
+.test-toggle { display: inline-flex; align-items: center; gap: 10px; font-weight: 700; padding: 6px 8px 6px 14px; border-radius: 999px; background: rgb(0 0 0 / 22%); cursor: pointer; }
+/* click test: the same mouse, every press shown live, the numbers underneath */
+.test-area { flex: 1; min-height: 0; display: flex; position: relative; border-radius: var(--radius); outline: 2px dashed rgb(59 156 255 / 45%); outline-offset: -2px; background: rgb(59 156 255 / 5%); user-select: none; cursor: crosshair; }
+.test-stats { position: absolute; inset-inline: 0; bottom: 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-end; gap: 8px 22px; padding: 10px 14px 14px; font-variant-numeric: tabular-nums; background: linear-gradient(transparent, rgb(25 25 28 / 85%) 40%); border-radius: 0 0 var(--radius) var(--radius); }
+.test-stats div { display: flex; flex-direction: column; align-items: center; min-width: 48px; }
+.test-stats b { font-size: 20px; font-weight: 800; line-height: 1.1; }
+.test-stats span { font-size: 11.5px; opacity: .7; }
+.test-stats .cps b { font-size: 40px; color: var(--accent-fg); }
 .panel { min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 20px 20px 120px; display: flex; flex-direction: column; gap: 16px; border-inline-start: 1px solid var(--line); }
 .panel-body { display: contents; }
 .panel-body > * { flex: none; min-width: 0; animation: fade 180ms var(--ease); }
@@ -131,7 +139,7 @@ button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: i
 .ss-badge.accent { background: rgb(59 156 255 / 22%); color: var(--accent-fg); }
 .ss-badge.warn { background: rgb(255 163 72 / 20%); color: var(--warn); }
 .ss-badge.live { background: rgb(61 220 132 / 14%); color: var(--ok); cursor: help; }
-.hits-panel .ss-badge.warn { white-space: normal; align-self: flex-start; }
+.ss-badge.wrap { white-space: normal; align-self: flex-start; }
 .ss-chip { border-radius: 999px; padding: 6px 14px; background: var(--raised); font-weight: 700; min-height: 34px; }
 .ss-chip:hover:not(:disabled) { background: #454548; }
 .ss-chip.on, .ss-chip.on:hover:not(:disabled) { background: var(--accent); color: #fff; }

@@ -127,7 +127,9 @@ class Renderer {
   get flip() {
     return this.props.flip ?? true;
   }
+  /** Clickable zones; none when nothing listens for a click (the picture is then for looking only). */
   active(v: number): string[] {
+    if (!this.props.onZone) return [];
     const z = this.props.zones;
     return ZONES[VIEWS[v]].filter((n) => !z?.length || z.includes(n as Zone));
   }

@@ -11,9 +11,10 @@ export interface Studio {
   layer: number; // 0 normal, 1 DPI-shift layer
   view: View;
   setup: boolean; // quick setup open
+  test: boolean; // the large mouse is the click test area
 }
 
-let studio: Studio = { target: "left", button: 0, layer: 0, view: "top", setup: false };
+let studio: Studio = { target: "left", button: 0, layer: 0, view: "top", setup: false, test: false };
 const listeners = new Set<() => void>();
 
 export const getStudio = () => studio;

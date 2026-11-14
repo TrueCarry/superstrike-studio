@@ -20,6 +20,7 @@ const SHOTS = {
   device: { route: "#/device" },
   "full-hd": { route: "#/aim", size: FULL },
   "test-clicks": { route: "#/click", run: "document.querySelector('.stage-foot .switch input')?.click()" },
+  "click-right": { route: "#/click", run: "document.querySelectorAll('.panel .segments button')[1]?.click()" },
   "lang-ja": { route: "&lang=ja#/profiles?dirty=1" },
   "lang-ar": { route: "&lang=ar#/aim?profile=3" },
   "lang-ur": { route: "&lang=ur#/click" },
