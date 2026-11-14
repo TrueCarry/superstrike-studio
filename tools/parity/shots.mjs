@@ -1,86 +1,109 @@
-// Screenshot parity report: renders the web app with the demo mouse in headless Chrome, in the same
-// states as the native app's docs/screenshots (upstream tools/screenshots/capture.sh), and writes
-// tools/parity/out/report.html with native and web side by side, overlaid, and as a difference.
+// Design review shots: renders the app with the demo mouse in headless Chrome, in each panel and a few
+// states (unsaved change, held button, other languages, right-to-left, narrow window, reduced motion),
+// and writes tools/parity/out/report.html with all of them.
 //   node tools/parity/shots.mjs [name ...]      (default: every shot)
 // Uses the dev server on 127.0.0.1:8017 when it runs, otherwise starts one. No extra packages.
-import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { ROOT, SERVER, ensureServer, findBrowser } from "./chrome.mjs";
+import { ROOT, SERVER, ensureServer, headless } from "./chrome.mjs";
 
 const OUT = join(ROOT, "tools/parity/out");
-const NATIVE_COMMIT = "991cbfc"; // last commit with the native app and its screenshots
-const SIZE = [1310, 850]; // the native screenshots' size
+const WIDE = [1440, 900], FULL = [1920, 1080], NARROW = [420, 900];
 
-// name -> page query and hash route with the state the native capture used (language, profile N, tab,
-// view, unsaved change, held left button + scroll)
+// name -> { route: query and hash (profile N, tab, view, unsaved change, held left button + scroll), size, query, motion, run }
 const SHOTS = {
-  hits: "#/hits?dirty=1&press=1",
-  "hits-rapid": "#/hits?profile=2&tab=rt&press=1",
-  "hits-presets": "#/hits?tab=presets&press=1",
-  buttons: "#/buttons?profile=4&view=side&press=1",
-  sensor: "#/sensor?profile=3",
-  profiles: "#/profiles?dirty=1",
-  device: "#/device",
-  "lang-ja": "&lang=ja#/profiles?dirty=1",
-  "lang-ar": "&lang=ar#/sensor?profile=3",
+  connect: { route: "#/click", query: "" },
+  click: { route: "#/click?dirty=1&press=1" },
+  aim: { route: "#/aim?profile=3" },
+  "aim-end": { route: "#/aim?profile=3", run: "document.querySelector('.panel').scrollTop = 1e6" },
+  buttons: { route: "#/buttons?profile=4&press=1" },
+  "buttons-end": { route: "#/buttons?profile=4", run: "document.querySelector('.panel').scrollTop = 1e6" },
+  profiles: { route: "#/profiles?dirty=1" },
+  "profiles-end": { route: "#/profiles", run: "document.querySelector('.panel').scrollTop = 1e6" },
+  device: { route: "#/device" },
+  "device-end": { route: "#/device", run: "document.querySelector('.panel').scrollTop = 1e6" },
+  "full-hd": { route: "#/aim", size: FULL },
+  "test-clicks": { route: "#/click", run: "document.querySelector('.stage-foot .switch input')?.click()" },
+  "click-right": { route: "#/click", run: "document.querySelectorAll('.panel .segments button')[1]?.click()" },
+  "lang-ja": { route: "&lang=ja#/profiles?dirty=1" },
+  "lang-ar": { route: "&lang=ar#/aim?profile=3" },
+  "lang-ur": { route: "&lang=ur#/click" },
+  narrow: { route: "#/click", size: NARROW },
+  "reduced-motion": { route: "#/aim", motion: "reduce" },
+  "setup-speed": { route: "#/profiles", run: `(async () => {
+    document.querySelector('.panel-head .suggested').click(); await new Promise((r) => setTimeout(r, 200));
+    document.querySelector('.setup-choice').click(); await new Promise((r) => setTimeout(r, 100)); document.querySelector('.setup footer .suggested').click(); await new Promise((r) => setTimeout(r, 200));
+    document.querySelectorAll('.setup [role=radio]')[2].click();
+  })()` },
+  "setup-save": { route: "#/profiles", run: `(async () => {
+    document.querySelector('.panel-head .suggested').click(); await new Promise((r) => setTimeout(r, 200));
+    document.querySelector('.setup-choice').click(); await new Promise((r) => setTimeout(r, 100)); document.querySelector('.setup footer .suggested').click(); await new Promise((r) => setTimeout(r, 200));
+    document.querySelectorAll('.setup [role=radio]')[2].click(); await new Promise((r) => setTimeout(r, 100)); document.querySelector('.setup footer .suggested').click();
+  })()` },
+  // the newer scenes at a few moments of their loop, side by side
+  scenes: { route: "#/click", size: [1600, 1100], run: `(async () => {
+    const { SCENES } = await import("/src/illustrations/index.ts");
+    const rows = [["speed", { dpi: 1600, marks: [800, 1600, 3200] }], ["surface", { mode: 0 }], ["surface", { mode: 2 }], ["scroll", { ms: 100 }], ["power", { low: 60, sleep: 300 }], ["save", { act: 3, dpi: 1600, hap: 2 }]];
+    document.body.innerHTML = "";
+    document.body.style.cssText = "overflow:auto;background:#111;display:grid;grid-template-columns:repeat(5,1fr);gap:4px";
+    for (const [name, v] of rows) {
+      const sc = SCENES[name];
+      if (!sc) continue;
+      const [w, h] = sc.size(v);
+      for (const k of [0.15, 0.35, 0.55, 0.75, 0.95]) {
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h; c.style.width = "100%";
+        sc.draw(c.getContext("2d"), sc.duration * k, v, w, h);
+        document.body.append(c);
+      }
+    }
+  })()` },
 };
-const url = (n) => `${SERVER}?demo${SHOTS[n]}`;
+// the connect screen is the app without ?demo
+const url = (n) => `${SERVER}?${SHOTS[n].query ?? "demo&shot"}${SHOTS[n].route}`;
+const sizeOf = (n) => SHOTS[n].size ?? WIDE;
 
-function nativePng(name) {
-  return execFileSync("git", ["show", `${NATIVE_COMMIT}:docs/screenshots/${name}.png`], { cwd: ROOT, maxBuffer: 1 << 26 });
-}
-
-function webShot(browser, name) {
-  const file = join(OUT, `web-${name}.png`);
-  execFileSync(browser, [
-    "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", "--no-default-browser-check",
-    "--force-device-scale-factor=1", `--window-size=${SIZE.join(",")}`, "--virtual-time-budget=6000",
-    `--user-data-dir=${join(OUT, "chrome-profile")}`, `--screenshot=${file}`, url(name),
-  ], { stdio: "ignore", timeout: 60_000 });
-  return file;
+async function shot(page, name) {
+  const [width, height] = sizeOf(name), s = SHOTS[name];
+  await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+  await page.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: s.motion ?? "" }] });
+  await page.send("Page.navigate", { url: "about:blank" }); // a fresh load even when only the hash differs
+  await page.send("Page.navigate", { url: url(name) });
+  await new Promise((r) => setTimeout(r, 2500));
+  if (s.run) (await page.evaluate(s.run), await new Promise((r) => setTimeout(r, 800)));
+  const { data } = await page.send("Page.captureScreenshot", { format: "png" });
+  writeFileSync(join(OUT, `${name}.png`), Buffer.from(data, "base64"));
 }
 
 function report(names) {
   const rows = names.map((n) => `
 <section id="${n}">
   <h2>${n} <a href="${url(n)}" target="_blank">open live</a></h2>
-  <div class="pair">
-    <figure><figcaption>Native (${NATIVE_COMMIT})</figcaption><img src="native-${n}.png"></figure>
-    <figure><figcaption>Web</figcaption><img src="web-${n}.png"></figure>
-  </div>
-  <figure class="stack"><figcaption>Overlay / difference</figcaption>
-    <div class="layers"><img src="native-${n}.png"><img class="top" src="web-${n}.png"></div>
-  </figure>
+  <img src="${n}.png" style="max-width:${sizeOf(n)[0]}px">
 </section>`).join("");
-  return `<!doctype html><meta charset="utf-8"><title>Native vs web</title>
+  return `<!doctype html><meta charset="utf-8"><title>Design review</title>
 <style>
 body{background:#1b1b1f;color:#ddd;font:14px system-ui;margin:0;padding:16px 24px}
-header{position:sticky;top:0;background:#1b1b1f;padding:8px 0;z-index:2;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
-a{color:#6cb6ff} h2{font-size:15px;margin:28px 0 8px}
-.pair{display:grid;grid-template-columns:1fr 1fr;gap:12px} figure{margin:0} figcaption{opacity:.7;margin-bottom:4px}
-img{width:100%;display:block;border:1px solid #333}
-.stack{margin-top:12px;max-width:50%}.layers{position:relative}.layers .top{position:absolute;inset:0;opacity:var(--o,.5);mix-blend-mode:var(--m,normal)}
+header{position:sticky;top:0;background:#1b1b1f;padding:8px 0;z-index:2;display:flex;gap:16px;flex-wrap:wrap}
+a{color:#6cb6ff} h2{font-size:15px;margin:28px 0 8px} img{width:100%;display:block;border:1px solid #333}
 </style>
-<header><b>Native vs web</b>${names.map((n) => `<a href="#${n}">${n}</a>`).join("")}
-<label>Overlay mode <select onchange="document.body.style.setProperty('--m',this.value)"><option value="normal">opacity</option><option value="difference">difference</option></select></label>
-<label>Web opacity <input type="range" min="0" max="1" step="0.05" value="0.5" oninput="document.body.style.setProperty('--o',this.value)"></label></header>
+<header><b>Design review</b>${names.map((n) => `<a href="#${n}">${n}</a>`).join("")}</header>
 ${rows}`;
 }
 
 const picked = process.argv.slice(2);
 const names = picked.length ? picked : Object.keys(SHOTS);
 for (const n of names) if (!SHOTS[n]) throw new Error(`unknown shot "${n}". Known: ${Object.keys(SHOTS).join(", ")}`);
-const browser = findBrowser();
 mkdirSync(OUT, { recursive: true });
 const server = await ensureServer();
+const page = await headless("about:blank", { port: 9335 });
 try {
   for (const n of names) {
-    writeFileSync(join(OUT, `native-${n}.png`), nativePng(n));
-    webShot(browser, n);
+    await shot(page, n);
     console.log(`  ${n}`);
   }
 } finally {
+  await page.close();
   server?.kill();
 }
 writeFileSync(join(OUT, "report.html"), report(names));

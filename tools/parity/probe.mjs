@@ -1,5 +1,5 @@
 // Measures a screenshot: colours along a row or column, collapsed into runs, to read off sizes,
-// edges and colours of the native app.
+// edges and colours of the native app (its screenshots at 991cbfc) or of a design review shot.
 //   node tools/parity/probe.mjs <native|web> <shot> row <y> [x0 x1]
 //   node tools/parity/probe.mjs <native|web> <shot> col <x> [y0 y1]
 //   node tools/parity/probe.mjs <native|web> <shot> at <x> <y>
@@ -13,7 +13,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const [side, shot, mode, a, b, c] = process.argv.slice(2);
 const buf = side === "native"
   ? execFileSync("git", ["show", `991cbfc:docs/screenshots/${shot}.png`], { cwd: ROOT, maxBuffer: 1 << 26 })
-  : readFileSync(join(ROOT, "tools/parity/out", `web-${shot}.png`));
+  : readFileSync(join(ROOT, "tools/parity/out", `${shot}.png`));
 const img = decodePng(buf);
 if (mode === "at") {
   console.log(pixel(img, +a, +b));

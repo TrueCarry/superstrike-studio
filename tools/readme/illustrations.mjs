@@ -1,11 +1,11 @@
-// Renders the README illustrations (tools/readme/scenes.html, on the app's src/mouse_*.svg) frame by frame in headless Chrome and
-// writes them as looping GIFs to docs/illustrations/.
+// Renders the README illustrations (the app's src/illustrations, through tools/readme/scenes.html on a Vite server)
+// frame by frame in headless Chrome and writes them as looping GIFs to docs/illustrations/.
 //   node tools/readme/illustrations.mjs [scene ...]      (default: every scene)
 import { spawn } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { pathToFileURL } from "node:url";
+import { createServer } from "vite";
 import { ROOT, findBrowser } from "../parity/chrome.mjs";
 import { encodeGif } from "./gif.mjs";
 
@@ -49,8 +49,10 @@ function session(url) {
   return new Promise((resolve) => (ws.onopen = () => resolve({ evaluate, close: () => ws.close() })));
 }
 
+const server = await createServer({ root: ROOT, logLevel: "error", server: { port: 8019, strictPort: false } });
+await server.listen();
+const page = new URL("tools/readme/scenes.html", server.resolvedUrls.local[0]).href;
 const profile = mkdtempSync(join(tmpdir(), "ss-illustrations-"));
-const page = pathToFileURL(join(ROOT, "tools/readme/scenes.html")).href;
 const chrome = spawn(findBrowser(), [
   "--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", "--force-device-scale-factor=1",
   `--remote-debugging-port=${PORT}`, `--user-data-dir=${profile}`, page,
@@ -58,10 +60,6 @@ const chrome = spawn(findBrowser(), [
 try {
   const cdp = await session(await connect());
   while (!(await cdp.evaluate("typeof window.render === 'function'"))) await new Promise((r) => setTimeout(r, 100));
-  const icons = Object.fromEntries([...readFileSync(join(ROOT, "src/components/icons.tsx"), "utf8").matchAll(/^\s+(\w+): "(M[^"]+)"/gm)].map((m) => [m[1], m[2]]));
-  await cdp.evaluate(`Object.assign(ICONS, ${JSON.stringify(icons)})`);
-  for (const view of ["top", "side"])
-    await cdp.evaluate(`load("${view}", ${JSON.stringify(readFileSync(join(ROOT, `src/mouse_${view}.svg`), "utf8"))})`);
   const scenes = await cdp.evaluate("window.scenes");
   const picked = process.argv.slice(2);
   for (const n of picked) if (!scenes[n]) throw new Error(`unknown scene "${n}". Known: ${Object.keys(scenes).join(", ")}`);
@@ -81,6 +79,7 @@ try {
   cdp.close();
 } finally {
   chrome.kill();
+  await server.close();
   await new Promise((r) => setTimeout(r, 500));
   rmSync(profile, { recursive: true, force: true, maxRetries: 5 });
 }

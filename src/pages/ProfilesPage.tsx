@@ -1,19 +1,23 @@
-// Profiles page (upstream page_profiles.cpp): onboard profile cards, control mode, backup and restore.
-// Web additions: the factory-state notice, and automatic backups kept in this browser (native wrote them to a folder).
-import { useRef, useState } from "react";
+// Profiles panel (upstream page_profiles.cpp): the onboard profiles as a fixed list in slot order, with
+// the profile button cycle playing above it, then the feel library. Control mode and backup are on Device.
+// Web addition: the factory-state notice.
+import { useRef } from "react";
 import { useNavigate } from "react-router";
-import { Boxed, Column, ComboRow, MenuButton, Row, Switch } from "../components/controls";
-import { confirmDialog } from "../components/dialogs";
-import { MODE_HOST, MODE_ONBOARD } from "../hid/device";
+import { FxCard } from "../components/cards";
+import { IconButton, MenuButton, Switch } from "../components/controls";
+import { Icon } from "../components/icons";
 import { f, t, tc } from "../i18n/i18n";
-import { download, listAutoBackups, stamp, type StoredBackup } from "../model/backup";
-import { FACTORY_SECTOR, profileFromJson, profileToJson } from "../model/profile";
+import { Illustration } from "../illustrations/Illustration";
+import { download } from "../model/backup";
+import { BUILTIN_PRESETS, FACTORY_SECTOR, PRO_PRESETS, hitsCodeDecode, presetName, profileFromJson, profileToJson, type Preset, type Profile } from "../model/profile";
+import { applyPreset, copyCode, importCode, saveCurrent, summary } from "../state/hits";
 import {
-  activateProfile, backupNow, getState, replaceProfile, restoreBackup, setControlMode, setDirEnabled, setEdit, toast, updateProfile, useStore,
+  activateProfile, deletePreset, getState, replaceProfile, setDirEnabled, setEdit, toast, updateProfile, useStore,
 } from "../state/store";
+import { setStudio, useStudio } from "../state/studio";
 
 /** Opens a file picker and resolves with the chosen file's text. */
-function pickFile(input: HTMLInputElement | null): Promise<string | null> {
+export function pickFile(input: HTMLInputElement | null): Promise<string | null> {
   return new Promise((resolve) => {
     if (!input) return resolve(null);
     input.value = "";
@@ -23,56 +27,56 @@ function pickFile(input: HTMLInputElement | null): Promise<string | null> {
 }
 
 const slotText = (i: number) => f(t("Profile %d"), i + 1);
+/** [click point, speed 0..1, haptics] for the profile button scene */
+const sceneValue = (p: Profile): [number, number, number] => [p.hits[0].act, Math.min(1, (p.stages[p.defaultStage]?.x || 800) / 3200), p.hits[0].hap];
 
 export default function ProfilesPage() {
   const dir = useStore((s) => s.dir);
+  const profiles = useStore((s) => s.profiles);
   const blank = useStore((s) => s.blank);
   const factoryEdited = useStore((s) => s.profiles[FACTORY_SECTOR]);
   const fileInput = useRef<HTMLInputElement>(null);
-  const [autoBackups, setAutoBackups] = useState(listAutoBackups);
-
-  const confirmRestore = async (text: string, what: string) => {
-    const body = f(t("This overwrites the profiles in the mouse with the contents of %s. The current memory is saved to the backup folder first."), what);
-    if (!(await confirmDialog(t("Restore memory?"), body, t("Restore"), "destructive"))) return;
-    await restoreBackup(text);
-    setAutoBackups(listAutoBackups());
-  };
+  const cycle = dir.map((e, slot) => ({ e, slot, p: profiles[e.sector] })).filter((x) => x.e.enabled && x.p);
 
   return (
-    <div className="scroll">
-      <Column>
-        {blank ? (
-          <section className="ss-panel">
-            <h2 className="ss-title">FACTORY STATE</h2>
-            <p className="ss-hint">
-              The mouse has no saved profiles yet: it runs on its built-in factory profile, which can not be changed.
-              You can still edit every setting here, and HITS changes are felt at once. Your first {t("Save to mouse")} creates
-              the onboard profiles, like G HUB does: Profile 1 gets your changes, the others start as copies of the factory profile.
-            </p>
-            {factoryEdited && <div><button onClick={() => download("profile-factory.json", profileToJson(factoryEdited))}>Export the factory profile…</button></div>}
-          </section>
-        ) : (
-          <>
-            <p className="ss-hint">{t("Profiles live inside the mouse and work on any computer without this app.")}</p>
-            <div className="cards">
-              {dir.map((e, slot) => <Card key={e.sector} slot={slot} fileInput={fileInput} />)}
-            </div>
-            <ControlMode />
-          </>
-        )}
-        <BackupPanel fileInput={fileInput} autoBackups={autoBackups} confirmRestore={confirmRestore} />
-        <input ref={fileInput} type="file" accept=".json,application/json" hidden />
-      </Column>
-    </div>
+    <>
+      <div className="panel-head">
+        <h2>{tc("page", "Profiles")}</h2>
+        <span className="spacer" />
+        <button className="suggested pill" onClick={() => setStudio({ setup: true })}>{t("Quick setup")}</button>
+      </div>
+      {blank ? (
+        <FxCard title="Factory state" icon="profiles">
+          <p className="ss-hint">
+            The mouse has no saved profiles yet: it runs on its built-in factory profile, which can not be changed.
+            You can still edit every setting here, and HITS changes are felt at once. Your first {t("Save to mouse")} creates
+            the onboard profiles, like G HUB does: Profile 1 gets your changes, the others start as copies of the factory profile.
+          </p>
+          {factoryEdited && <div><button onClick={() => download("profile-factory.json", profileToJson(factoryEdited))}>Export the factory profile…</button></div>}
+        </FxCard>
+      ) : (
+        <FxCard title={t("Profiles")} icon="profiles" value={<>{cycle.length}<small>{f(t("of %d in the cycle"), dir.length)}</small></>}
+          scene="profiles" sceneValue={{ values: cycle.map((x) => sceneValue(x.p)), names: cycle.map((x) => x.p.name || slotText(x.slot)) }} tall>
+          <p className="ss-hint">{t("Profiles live inside the mouse and work on any computer without this app.")} {t("The profile button steps through the ones in the cycle.")}</p>
+          <ol className="profile-list">
+            {dir.map((e, slot) => <ProfileRow key={e.sector} slot={slot} fileInput={fileInput} />)}
+          </ol>
+        </FxCard>
+      )}
+      <FeelLibrary />
+      <input ref={fileInput} type="file" accept=".json,application/json" hidden />
+    </>
   );
 }
 
-function Card(props: { slot: number; fileInput: React.RefObject<HTMLInputElement | null> }) {
+/** One profile: number, name and badges, its summary, then Edit, Activate and More in fixed places. */
+function ProfileRow(props: { slot: number; fileInput: React.RefObject<HTMLInputElement | null> }) {
   const { slot } = props;
   const entry = useStore((s) => s.dir[slot]);
   const sector = entry.sector;
   const p = useStore((s) => s.profiles[sector]);
   const active = useStore((s) => s.active === sector);
+  const editing = useStore((s) => s.edit === sector);
   const unsaved = useStore((s) => s.dirty.includes(sector));
   const connected = useStore((s) => s.status === "connected");
   const count = useStore((s) => s.dir.length);
@@ -114,29 +118,38 @@ function Card(props: { slot: number; fileInput: React.RefObject<HTMLInputElement
   };
 
   return (
-    <section className="ss-panel card">
-      <div className="top">
-        <span className="ss-value">{slot + 1}</span>
-        <span className="spacer" />
-        {active && <span className="ss-badge accent">{tc("profile badge", "Active")}</span>}
-        {unsaved && <span className="ss-badge warn">{t("Unsaved")}</span>}
+    <li className={`profile-row ${editing ? "editing" : ""}`}>
+      <span className="num">{slot + 1}</span>
+      <div className="who">
+        <input className="name" key={p?.name} defaultValue={p?.name || slotText(slot)} maxLength={24} aria-label={slotText(slot)} disabled={!p}
+          onFocus={(e) => e.currentTarget.select()}
+          onBlur={(e) => rename(e.currentTarget.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") (e.currentTarget.value = p?.name || slotText(slot)), e.currentTarget.blur();
+          }} />
+        <div className="badges">
+          {active && <span className="ss-badge accent">{tc("profile badge", "Active")}</span>}
+          {unsaved && <span className="ss-badge warn">{t("Unsaved")}</span>}
+        </div>
+        <label className="cycle" title={t("In profile cycle")}>
+          <span>{t("In cycle")}</span>
+          <Switch checked={entry.enabled} onChange={(v) => setDirEnabled(slot, v)} label={t("In profile cycle")} />
+        </label>
       </div>
-      <input className="name" key={p?.name} defaultValue={p?.name || slotText(slot)} maxLength={24} aria-label={slotText(slot)} disabled={!p}
-        onFocus={(e) => e.currentTarget.select()}
-        onBlur={(e) => rename(e.currentTarget.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur();
-          if (e.key === "Escape") (e.currentTarget.value = p?.name || slotText(slot)), e.currentTarget.blur();
-        }} />
-      <div className="line">
-        <span>{t("In profile cycle")}</span>
-        <span className="spacer" />
-        <Switch checked={entry.enabled} onChange={(v) => setDirEnabled(slot, v)} label={t("In profile cycle")} />
+      <div className="summary" aria-label={t("Summary")}>
+        {p && (
+          <>
+            <span title={t("Actuation")}><Icon name="actuation" />{p.hits[0].act}</span>
+            <span title="DPI"><Icon name="sensor" />{p.stages[p.defaultStage]?.x || "—"}</span>
+            <span title={t("Haptics")}><Icon name="haptics" />{p.hits[0].hap}</span>
+            <span className={p.hits[0].rtOn ? "rt" : "rt off"} title={t("Rapid trigger")}><Icon name="rapid" />{p.hits[0].rtOn ? p.hits[0].rt : "–"}</span>
+          </>
+        )}
       </div>
-      <div className="foot">
-        <button disabled={!p} onClick={() => (setEdit(sector), navigate("/hits"))}>{tc("profile card", "Edit")}</button>
+      <div className="acts">
+        <button disabled={!p || editing} onClick={() => (setEdit(sector), navigate("/click"))}>{editing ? tc("profile card", "Editing") : tc("profile card", "Edit")}</button>
         <button className={active ? "" : "suggested"} disabled={active || !connected || !p} onClick={() => void activateProfile(sector)}>{tc("profile card", "Activate")}</button>
-        <span className="spacer" />
         <MenuButton icon="more" tooltip={t("More actions")}>
           {(close) => (
             <>
@@ -152,60 +165,54 @@ function Card(props: { slot: number; fileInput: React.RefObject<HTMLInputElement
           )}
         </MenuButton>
       </div>
-    </section>
+    </li>
   );
 }
 
-function ControlMode() {
-  const mode = useStore((s) => s.info?.mode ?? MODE_ONBOARD);
-  const connected = useStore((s) => s.status === "connected");
-  const options = [{ value: MODE_ONBOARD, label: t("Onboard memory (recommended)") }, { value: MODE_HOST, label: t("Host software") }];
+/** Your presets, then the built-in ones, then pro presets: one row each with its click feel playing and Apply. */
+function FeelLibrary() {
+  const user = useStore((s) => s.presets);
+  const target = useStudio((s) => s.target);
+  const row = (p: Preset, name: string, onDelete?: () => void) => {
+    const v = hitsCodeDecode(p.code);
+    if (typeof v === "string") return null;
+    const h = v[target === "right" ? 1 : 0];
+    return (
+      <li key={`${name}:${p.code}`} className="feel-row" title={f(t("HITS code %s"), p.code)}>
+        <Illustration scene="feel" value={{ act: h.act, rt: h.rtOn ? h.rt : 0, hap: h.hap, on: target }} label={name} />
+        <div className="who">
+          <b>{name}</b>
+          <span className="ss-hint">{summary(v)}</span>
+        </div>
+        <div className="acts">
+          {onDelete && <IconButton icon="trash" tooltip={t("Delete preset")} onClick={onDelete} />}
+          <button onClick={() => applyPreset(name, v)}>{t("Apply")}</button>
+        </div>
+      </li>
+    );
+  };
   return (
-    <section className="ss-panel">
-      <h2 className="ss-title">{t("CONTROL MODE")}</h2>
-      <Boxed>
-        <ComboRow<number> title={t("Who controls the mouse")} value={mode === MODE_HOST ? MODE_HOST : MODE_ONBOARD} disabled={!connected}
-          options={options} onChange={(m) => void setControlMode(m)} />
-      </Boxed>
-    </section>
-  );
-}
-
-function BackupPanel(props: {
-  fileInput: React.RefObject<HTMLInputElement | null>;
-  autoBackups: StoredBackup[];
-  confirmRestore: (text: string, what: string) => Promise<void>;
-}) {
-  const connected = useStore((s) => s.status === "connected");
-  return (
-    <section className="ss-panel">
-      <h2 className="ss-title">{t("BACKUP")}</h2>
-      <Boxed>
-        <Row title={t("Back up whole memory…")} subtitle={t("All profiles, the directory and the factory profile, to a file")} chevron disabled={!connected}
-          onClick={async () => {
-            const text = await backupNow();
-            if (!text) return;
-            const name = `superstrike-backup-${stamp()}.json`;
-            download(name, text);
-            toast(f(t("Backup saved: %s"), name));
-          }} />
-        <Row title={t("Restore from backup…")} subtitle={t("Writes the saved sectors back into the mouse")} chevron disabled={!connected}
-          onClick={async () => {
-            const text = await pickFile(props.fileInput.current);
-            if (text !== null) await props.confirmRestore(text, props.fileInput.current?.files?.[0]?.name ?? "the chosen file");
-          }} />
-      </Boxed>
-      <p className="ss-hint">{f(t("The app also makes a full backup automatically before the first save of each session, in %s."), "this browser")}</p>
-      {props.autoBackups.length > 0 && (
-        <Boxed>
-          {props.autoBackups.map((b) => (
-            <Row key={b.time} title={`Automatic backup ${b.time}`}>
-              <button className="flat" onClick={() => download(`superstrike-auto-${b.time.replace(/[: ]/g, "-")}.json`, b.json)}>Download</button>
-              <button className="flat" disabled={!connected} onClick={() => void props.confirmRestore(b.json, `the automatic backup from ${b.time}`)}>{t("Restore")}</button>
-            </Row>
-          ))}
-        </Boxed>
-      )}
-    </section>
+    <FxCard title={t("Feel library")} icon="hits">
+      <p className="ss-hint">{t("Apply a click feel to the profile you are editing. Nothing is written until you save.")}</p>
+      <div className="row-head">
+        <h4 className="ss-title">{t("YOUR PRESETS")}</h4>
+        <span className="spacer" />
+        <button className="flat" onClick={() => void saveCurrent()}><Icon name="plus" /> {t("Save current as preset…")}</button>
+        <MenuButton icon="code" tooltip={t("HITS code")}>
+          {(close) => (
+            <>
+              <button onClick={() => (close(), void copyCode())}>{t("Copy HITS code")}</button>
+              <button onClick={() => (close(), void importCode())}>{t("Import HITS code…")}</button>
+            </>
+          )}
+        </MenuButton>
+      </div>
+      <ul className="feel-list">
+        {user.map((p) => row(p, p.name, () => deletePreset(p.name)))}
+        {BUILTIN_PRESETS.map((p) => row(p, presetName(p)))}
+      </ul>
+      <h4 className="ss-title gap">{t("PRO PRESETS")}</h4>
+      <ul className="feel-list">{PRO_PRESETS.map((p) => row(p, p.name))}</ul>
+    </FxCard>
   );
 }

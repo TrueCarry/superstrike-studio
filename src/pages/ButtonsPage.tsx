@@ -1,14 +1,14 @@
 // Buttons page (upstream page_buttons.cpp): an action for each of the five buttons, on the normal
 // and the DPI-shift layer. The mouse with line callouts on the left, one panel on the right.
-import { useCallback, useState } from "react";
-import { useSearchParams } from "react-router";
-import { Boxed, ComboRow, IconButton, Row, Toggles } from "../components/controls";
+import { FxCard, Segments } from "../components/cards";
+import { Boxed, ComboRow, Row, SpinRow } from "../components/controls";
 import { ask, closeDialog } from "../components/dialogs";
-import { MouseView, type View } from "../components/MouseView";
+import { effectiveAction } from "../components/Stage";
 import { f, t, tc } from "../i18n/i18n";
 import { codeOf, describe, kindOf, makeAction, modsOf, type Action, type Kind, type Profile } from "../model/profile";
-import { BUTTON_ZONES, FUNCTIONS, KEYS, MEDIA, MODIFIERS, MOUSE_BUTTONS, buttonName, codeToHid, modifierBit, nameText, shortName, type Named, type Zone } from "../model/tables";
+import { BUTTON_ZONES, FUNCTIONS, KEYS, MEDIA, MODIFIERS, MOUSE_BUTTONS, buttonName, codeToHid, modifierBit, nameText, type Named } from "../model/tables";
 import { currentProfile, getState, toast, updateProfile, useStore } from "../state/store";
+import { setStudio, useStudio } from "../state/studio";
 
 const KIND_CHIPS: { kind: Kind; label: string }[] = [
   { kind: "mouse", label: "Mouse" }, { kind: "key", label: "Keyboard" }, { kind: "media", label: "Media" },
@@ -17,6 +17,20 @@ const KIND_CHIPS: { kind: Kind; label: string }[] = [
 const MOD_BITS = MODIFIERS.slice(0, 4); // Ctrl, Shift, Alt, Super
 
 const slotOf = (p: Profile, layer: number, i: number): Action => (layer ? p.shiftButtons : p.buttons)[i];
+
+/** The icon the remapping animation shows for an action. */
+function iconOf(a: Action): string {
+  const code = codeOf(a);
+  switch (kindOf(a)) {
+    case "mouse": return "mouse";
+    case "key": return (modsOf(a) & 1) && code === 0x06 ? "copy" : "keyboard";
+    case "media": return "media";
+    case "function": return code >= 0x03 && code <= 0x07 ? "sensor" : code >= 0x08 && code <= 0x0a ? "profiles" : code === 0x0c ? "device" : "mouse";
+    case "disabled": return "minus";
+    case "raw": return "code";
+    default: return "undo";
+  }
+}
 const hexText = (a: Action) => a.map((b) => b.toString(16).padStart(2, "0")).join(" ");
 
 /** Waits for one key press in an alert dialog. Modifiers held with it become the modifier mask; a modifier alone is recorded on release. */
@@ -56,30 +70,9 @@ function recordKey(): Promise<[number, number] | null> {
 export default function ButtonsPage() {
   const profile = useStore(currentProfile);
   const factory = useStore((s) => s.factory);
-  const [params] = useSearchParams();
-  const [sel, setSel] = useState(0);
-  const [layer, setLayer] = useState(0);
-  const [view, setView] = useState<View>(params.get("view") === "side" ? "side" : "top");
-
-  /** What the button really does: a "Default" slot uses the factory profile's action. */
-  const effective = useCallback(
-    (i: number): Action => {
-      const a = profile ? slotOf(profile, layer, i) : makeAction("default");
-      if (kindOf(a) === "default" && factory) {
-        const fa = slotOf(factory, layer, i);
-        if (kindOf(fa) !== "default") return fa;
-      }
-      return a;
-    },
-    [profile, factory, layer],
-  );
-  const labelFor = useCallback(
-    (z: Zone) => {
-      const i = BUTTON_ZONES.indexOf(z);
-      return i < 0 || !profile ? "" : `${shortName(i)}\n${describe(effective(i))}`;
-    },
-    [effective, profile],
-  );
+  const { button: sel, layer, view } = useStudio((s) => s);
+  const setLayer = (v: number) => setStudio({ layer: v });
+  const effective = (i: number) => effectiveAction(profile, factory, layer, i);
 
   const cur = profile ? slotOf(profile, layer, sel) : null;
   const kind = cur ? kindOf(cur) : "default";
@@ -96,10 +89,8 @@ export default function ButtonsPage() {
     return makeAction(k, code ?? keep ?? first[k] ?? 0, k === "key" ? (mods ?? (cur ? modsOf(cur) : 0)) : 0);
   };
   const select = (i: number) => {
-    setSel(i);
     const z = BUTTON_ZONES[i];
-    if ((z === "btn-back" || z === "btn-forward") && view === "top") setView("side");
-    else if ((z === "btn-left" || z === "btn-right") && view === "side") setView("top");
+    setStudio({ button: i, view: z === "btn-back" || z === "btn-forward" ? "side" : z === "btn-middle" ? view : "top" });
   };
   const combo = (title: string, table: Named[], k: Kind, search = false) => (
     <Boxed>
@@ -109,28 +100,21 @@ export default function ButtonsPage() {
   );
 
   return (
-    <div className={`split ${profile ? "" : "off"}`}>
-      <div className="stage">
-        <div className="toolbar">
-          <Toggles<View> value={view} onChange={setView} options={[{ value: "top", label: tc("view", "Top") }, { value: "side", label: tc("view", "Left side") }]} />
-          <IconButton icon="rotate" tooltip={t("Rotate the mouse")} onClick={() => setView(view === "top" ? "side" : "top")} />
-          <span className="spacer" />
-          <Toggles<number> value={layer} onChange={setLayer} title={t("Used while a button set to DPI shift is held")}
-            options={[{ value: 0, label: tc("button layer", "Normal") }, { value: 1, label: t("DPI-shift layer") }]} />
-        </div>
-        <MouseView view={view} onView={setView} callouts="lines" flip thumbnail labelFor={labelFor} selected={BUTTON_ZONES[sel]}
-          onZone={(z) => select(BUTTON_ZONES.indexOf(z))} />
-        <p className="ss-hint center">{t("Click a button on the mouse to change it. Drag sideways to rotate.")}</p>
-      </div>
-      <section className="ss-panel buttons-panel">
-        <div className="scroller">
-          <h2 className="ss-title">{t("BUTTONS")}</h2>
-          <Boxed>
-            {BUTTON_ZONES.map((z, i) => (
-              <Row key={z} title={buttonName(i)} subtitle={profile ? describe(effective(i)) : ""} selected={i === sel} onClick={() => select(i)} />
-            ))}
-          </Boxed>
-          <h2 className="ss-title gap">{t("ACTION")}</h2>
+    <>
+      <div className="panel-head"><h2>{tc("page", "Buttons")}</h2></div>
+      <FxCard title={t("Button")} icon="mouse">
+        <p className="ss-hint">{t("Pick a button here or on the mouse. The DPI-shift layer is used while a button set to DPI shift is held.")}</p>
+        <Segments<number> value={layer} onChange={setLayer} label={t("Used while a button set to DPI shift is held")}
+          options={[{ value: 0, label: tc("button layer", "Normal") }, { value: 1, label: t("DPI-shift layer") }]} />
+        <Boxed>
+          {BUTTON_ZONES.map((z, i) => (
+            <Row key={z} title={buttonName(i)} subtitle={profile ? describe(effective(i)) : ""} selected={i === sel} onClick={() => select(i)} />
+          ))}
+        </Boxed>
+      </FxCard>
+      <FxCard title={t("Action")} icon="buttons" value={profile ? <small>{describe(effective(sel))}</small> : undefined}
+        scene="remap" sceneValue={{ steps: [[BUTTON_ZONES[sel], iconOf(effective(sel))]] }} tall>
+          <p className="ss-hint">{f(t("What %s does."), buttonName(sel))}</p>
           <div className="chips3">
             {KIND_CHIPS.map((c) => (
               <button key={c.kind} className={`ss-chip ${cur && c.kind === kind ? "on" : ""}`} aria-pressed={c.kind === kind}
@@ -168,8 +152,17 @@ export default function ButtonsPage() {
           {kind === "raw" && cur && <Boxed><Row title={t("Macro or custom data (kept as is)")} subtitle={hexText(cur)} /></Boxed>}
           {kind === "default" && profile && <p className="ss-hint">{f(t("Uses the factory action: %s"), describe(effective(sel)))}</p>}
           <button className="flat" disabled={!profile || !factory} onClick={() => factory && setAction(slotOf(factory, layer, sel))}>{t("Restore factory action")}</button>
-        </div>
-      </section>
-    </div>
+      </FxCard>
+      {profile && (
+        <FxCard title={t("Scroll wheel")} icon="mouse" scene="scroll" sceneValue={{ ms: Math.min(profile.scrollFilter, 100) * 10 }} tall
+          value={profile.scrollFilter ? <>{profile.scrollFilter * 10}<small>ms</small></> : tc("level value", "off")}>
+          <p className="ss-hint">{t("Bunny-hop scroll filter, 0 = off")}</p>
+          <Boxed>
+            <SpinRow title={t("Scroll filter (ms)")} value={Math.min(profile.scrollFilter, 100) * 10} min={0} max={1000} step={10}
+              onCommit={(v) => updateProfile((p) => (p.scrollFilter = Math.round(v / 10)))} />
+          </Boxed>
+        </FxCard>
+      )}
+    </>
   );
 }

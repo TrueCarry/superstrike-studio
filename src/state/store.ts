@@ -97,7 +97,7 @@ const set = (patch: Partial<State> | ((s: State) => Partial<State>)) => {
 };
 export const getState = () => state;
 // Dev builds: the live store, for debugging from the console.
-if (import.meta.env.DEV) Object.assign(globalThis, { __superstrike: { getState } });
+if (import.meta.env.DEV) Object.assign(globalThis, { __superstrike: { getState, updateProfile: (fn: (p: Profile) => void) => updateProfile(fn) } });
 export function useStore<T>(select: (s: State) => T): T {
   return useSyncExternalStore(
     (l) => (listeners.add(l), () => listeners.delete(l)),
@@ -267,19 +267,59 @@ async function loadAll(d: Device, productId: number) {
     for (const e of dir) profiles[e.sector] = parseProfile(e.sector, await d.readSector(e.sector));
   }
   const edit = profiles[state.edit] ? state.edit : profiles[active] ? active : (dir[0]?.sector ?? -1);
+  saved = { profiles: Object.fromEntries(Object.entries(profiles).map(([k, p]) => [k, cloneProfile(p)])), dir: dir.map((e) => ({ ...e })) };
+  forced.clear();
   set({ status: "connected", info, dirRaw, dir, profiles, factory, active, edit, dirty: [], blank });
+}
+
+// ---------------------------------------------------------------- unsaved changes
+
+/** What the mouse memory holds: taken on load and after each save. A sector is unsaved when it differs from this. */
+let saved: { profiles: Record<number, Profile>; dir: DirEntry[] } = { profiles: {}, dir: [] };
+/** Sectors marked unsaved without a change (screenshot states). */
+const forced = new Set<number>();
+
+const sameBytes = (a: Uint8Array, b: Uint8Array) => a.length === b.length && a.every((v, i) => v === b[i]);
+const sameDir = (a: DirEntry[], b: DirEntry[]) => a.length === b.length && a.every((e, i) => e.sector === b[i].sector && e.enabled === b[i].enabled);
+
+/** Recomputes `dirty`: the profiles and the directory that differ from what the mouse holds. */
+function refreshDirty() {
+  const dirty = Object.values(state.profiles)
+    .filter((p) => { const s = saved.profiles[p.sector]; return !s || !sameBytes(encodeProfile(p), encodeProfile(s)); })
+    .map((p) => p.sector);
+  if (!sameDir(state.dir, saved.dir)) dirty.push(DIR_SECTOR);
+  for (const s of forced) if (!dirty.includes(s)) dirty.push(s);
+  if (dirty.length !== state.dirty.length || dirty.some((s, i) => s !== state.dirty[i])) set({ dirty });
+}
+
+/** Drops every unsaved change at once, without reading the mouse again. The active profile's HITS, sent live while editing, go back too. */
+export async function discard() {
+  if (state.status !== "connected") return;
+  const before = state.profiles[state.active];
+  const profiles = Object.fromEntries(Object.entries(saved.profiles).map(([k, p]) => [k, cloneProfile(p)]));
+  forced.clear();
+  set({ profiles, dir: saved.dir.map((e) => ({ ...e })) });
+  refreshDirty();
+  const after = profiles[state.active];
+  if (before && after && !state.blank) {
+    const changed = [0, 1].filter((b) => JSON.stringify(before.hits[b]) !== JSON.stringify(after.hits[b]));
+    if (changed.length) await run(async (d) => { for (const b of changed) await d.hitsSet(b, after.hits[b]); });
+  }
+  toast(t("Changes discarded"));
 }
 
 /** Re-reads everything from the mouse, dropping unsaved changes. */
 export async function revert() {
   if (!device || !hidDevice) return;
-  set({ status: "loading" });
+  // the studio stays on screen under the busy overlay; only a first connect shows the connect screen
+  set({ busy: t("Reading the mouse memory…") });
   try {
     await loadAll(device, hidDevice.productId);
     toast(t("Loaded from the mouse"));
   } catch (e) {
     toast(f(t("Mouse: %s"), message(e)), "error");
-    set({ status: "connected" });
+  } finally {
+    set({ busy: "" });
   }
 }
 
@@ -309,18 +349,20 @@ export function setEdit(sector: number) {
   set({ edit: sector });
 }
 
+/** Marks a sector unsaved without changing it (screenshot states). */
 export function markDirty(sector: number) {
-  set((s) => ({ dirty: s.dirty.includes(sector) ? s.dirty : [...s.dirty, sector] }));
+  forced.add(sector);
+  refreshDirty();
 }
 
-/** Edits the profile being edited (or `sector`) and marks it unsaved. */
+/** Edits the profile being edited (or `sector`). It counts as unsaved while it differs from the mouse memory. */
 export function updateProfile(fn: (p: Profile) => void, sector = state.edit) {
   const cur = state.profiles[sector];
   if (!cur) return;
   const p = cloneProfile(cur);
   fn(p);
   set((s) => ({ profiles: { ...s.profiles, [sector]: p } }));
-  markDirty(sector);
+  refreshDirty();
 }
 
 /** Copies all settings of `from` into `sector` (keeps that profile's name). Unsaved until save(). */
@@ -348,7 +390,7 @@ export function setDirEnabled(slot: number, on: boolean) {
     return;
   }
   set((s) => ({ dir: s.dir.map((e, i) => (i === slot ? { ...e, enabled: on } : e)) }));
-  markDirty(DIR_SECTOR);
+  refreshDirty();
 }
 
 export async function activateProfile(sector: number) {
@@ -463,11 +505,16 @@ export async function save() {
     return { written, dirWritten };
   }, t("Writing to the mouse memory…"), saveFailed);
   if (!result) return;
+  // what was written is now the saved state; edits made while writing stay unsaved
+  for (const w of result.written) saved.profiles[w.sector] = parseProfile(w.sector, w.raw);
+  if (result.dirWritten) saved.dir = parseDirectory(result.dirWritten);
+  forced.clear();
   set((s) => {
     const profiles = { ...s.profiles };
-    for (const w of result.written) profiles[w.sector] = parseProfile(w.sector, w.raw);
-    return { profiles, dirRaw: result.dirWritten ?? s.dirRaw, dirty: [] };
+    for (const w of result.written) if (sameBytes(encodeProfile(profiles[w.sector]), writes.find((x) => x.sector === w.sector)!.raw)) profiles[w.sector] = parseProfile(w.sector, w.raw);
+    return { profiles, dirRaw: result.dirWritten ?? s.dirRaw };
   });
+  refreshDirty();
   toast(t("Saved in the mouse — it now works without this app"));
 }
 

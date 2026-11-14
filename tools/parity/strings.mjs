@@ -41,6 +41,26 @@ const NOT_PORTED = {
   "Connected · %d %%": "stale in the catalog: 991cbfc shows the battery on its own line",
   "Connected · charging": "stale in the catalog: 991cbfc shows the battery on its own line",
   ...Object.fromEntries(Array.from({ length: 9 }, (_, i) => [`Keypad ${i + 1}`, "name built in a loop in src/model/tables.ts"])),
+  // the redesign (tabs and cards instead of the sidebar and pages)
+  "HITS tuning": "redesign: the tab is Click", "Sensor": "redesign: the tab is Aim",
+  "HITS CONFIGURATION": "redesign: the Click panel has one card per setting",
+  "Rapid": "redesign: no HITS tabs, one card per setting", "Presets": "redesign: presets moved to the Profiles feel library",
+  "BUTTONS": "redesign: the panel title is the Buttons tab", "POLLING RATE": "redesign: the Polling rate card", "TRACKING": "redesign: one card per setting on Aim",
+  "POWER": "redesign: the Battery life card on Device", "HID++ FEATURES": "redesign: the Developer card on Device",
+  // the polish round: one column of cards, control mode and backup on Device, the click test on the mouse
+  "ACTION": "redesign: the Action card title", "DPI STAGES": "redesign: the DPI stages card title",
+  "LOOK": "redesign: the App card on Device", "BACKUP": "redesign: the Backup card title", "CONTROL MODE": "redesign: the Saved profiles card",
+  "Who controls the mouse": "redesign: the \"Use saved profiles\" switch", "Onboard memory (recommended)": "redesign: the \"Use saved profiles\" switch",
+  "Host software": "redesign: the \"Use saved profiles\" switch",
+  "System default": "redesign: the language picker shows \"Auto · <language>\"",
+  "Click a stage to switch the mouse to it now. New DPI values are felt after Save to mouse (Ctrl+S) — the mouse takes DPI only from its memory. ★ = stage after power-on.": "redesign: a shorter hint under the speed animation",
+  "L %d · R %d · M %d · Back %d · Fwd %d · %d clicks/s · held %d ms": "redesign: Test clicks shows each number on its own under the mouse",
+  "Test here — click with any button": "redesign: Test clicks on the large mouse",
+  "Strongest": "redesign: haptics is a row of levels 0..5", "Rotate the mouse": "redesign: rotate by the thumbnail or a sideways drag",
+  "EDITING": "redesign: the profile switcher in the top bar", "%s · Active": "redesign: the profile switcher marks the active profile",
+  "%s · not active": "redesign: the profile switcher marks the active profile", "Name": "redesign: the name heads the Device panel",
+  "Searching for the PRO X3 SUPERSTRIKE — switch the mouse on or plug in the receiver": "redesign: the connect screen replaces the banner",
+  "Retry": "redesign: the connect screen replaces the banner",
 };
 
 function parsePot(text) {
@@ -119,4 +139,16 @@ for (const [file, list] of [...byFile].sort()) {
 const raw = rawUiText(files, catalog);
 console.log(`\nWeb text not in the catalog (shown untranslated): ${raw.length}`);
 for (const r of raw) console.log(`  ${r.file}:${r.line}  ${r.kind}  ${JSON.stringify(r.text)}`);
-console.log(`\nTo do: ${todo} native strings unused without a reason, ${raw.length} untranslated web texts.`);
+
+// New strings the redesign passes through t() / tc(): shown in English until they are added to the catalog.
+const fresh = new Map();
+for (const file of files.filter((f) => !/[\\/]i18n[\\/]/.test(f))) {
+  const src = readFileSync(file, "utf8"), rel = relative(ROOT, file).replaceAll("\\", "/");
+  for (const m of src.matchAll(/\bt(?:c\(\s*"[^"]*",)?\(?\s*"((?:[^"\\]|\\.)+)"\s*\)/g)) {
+    const id = m[1].replace(/\\"/g, '"').replace(/\\n/g, "\n");
+    if (!catalog.has(id) && !fresh.has(id)) fresh.set(id, `${rel}:${src.slice(0, m.index).split("\n").length}`);
+  }
+}
+console.log(`\nNew strings through t() not in the catalog yet: ${fresh.size}`);
+for (const [id, at] of fresh) console.log(`  ${at}  ${JSON.stringify(id)}`);
+console.log(`\nTo do: ${todo} native strings unused without a reason, ${raw.length} untranslated web texts, ${fresh.size} new strings to translate.`);

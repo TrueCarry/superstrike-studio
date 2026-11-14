@@ -4,84 +4,20 @@
 // glow and ripple, rolling wheel ribs with a direction arrow.
 import { useEffect, useLayoutEffect, useRef } from "react";
 import { tc } from "../i18n/i18n";
+import { picture as pictureOf, type Picture, type View, type ZoneGeo } from "../illustrations/picture";
 import type { Zone } from "../model/tables";
 import { useStore } from "../state/store";
-import sideSvg from "../mouse_side.svg?raw";
-import topSvg from "../mouse_top.svg?raw";
 import { font, roundRect, text } from "./controls";
 import { ICON_PATHS } from "./icons";
 import { useMouseInput } from "./useMouseInput";
 
-export type View = "top" | "side";
+export type { View };
 export type Callouts = "none" | "lines" | "boxes";
 const VIEWS: View[] = ["top", "side"];
 export const ZONES: Record<View, Zone[]> = { top: ["btn-left", "btn-right", "btn-middle"], side: ["btn-forward", "btn-back", "btn-middle"] };
 const FLIP_MS = 450;
 
-// ---------------------------------------------------------------- the drawings
-
-interface Part {
-  kind: "body" | "wheel" | "line" | "brand" | "zone";
-  id: string;
-  width: number; // stroke width of lines
-  path: Path2D;
-}
-interface ZoneGeo {
-  path: Path2D;
-  cx: number; // centroid and top, in drawing units
-  cy: number;
-  top: number;
-  ok: boolean;
-}
-interface Picture {
-  w: number;
-  h: number;
-  parts: Part[];
-  zones: Map<string, ZoneGeo>; // the button zones and "wheel"
-}
-
-const attr = (s: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).exec(s)?.[1] ?? "";
-
-function parse(svg: string): Picture {
-  const [, w, h] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) ?? ["", "510", "993"];
-  const parts: Part[] = [];
-  const groups: string[] = [];
-  for (const m of svg.matchAll(/<g\b([^>]*)>|<\/g>|<path\b([^>]*?)\/?>/g)) {
-    if (m[0] === "</g>") groups.pop();
-    else if (m[1] !== undefined) groups.push(attr(m[1], "id"));
-    else {
-      const a = m[2], cls = attr(a, "class"), id = attr(a, "id");
-      const kind: Part["kind"] = cls.includes("zone") ? "zone" : cls.includes("body") ? "body" : cls.includes("wheel") ? "wheel"
-        : cls.includes("line") ? "line" : groups.includes("brand") ? "brand" : "line";
-      const width = cls.includes("bold") ? 7 : cls.includes("thin") ? 2.4 : 4;
-      parts.push({ kind, id, width, path: new Path2D(attr(a, "d")) });
-    }
-  }
-  const pic: Picture = { w: +w, h: +h, parts, zones: new Map() };
-  for (const p of parts) if (p.kind === "zone" || p.kind === "wheel") pic.zones.set(p.kind === "wheel" ? "wheel" : p.id, geometry(pic, p.path));
-  return pic;
-}
-
-/** Centroid and top of a zone, sampled every 3 drawing units like build_mask(). */
-function geometry(pic: Picture, path: Path2D): ZoneGeo {
-  const c = document.createElement("canvas");
-  c.width = Math.ceil(pic.w);
-  c.height = Math.ceil(pic.h);
-  const g = c.getContext("2d", { willReadFrequently: true })!;
-  g.fill(path);
-  const data = g.getImageData(0, 0, c.width, c.height).data;
-  let sx = 0, sy = 0, n = 0, top = 0;
-  for (let y = 0; y < c.height; y += 3)
-    for (let x = 0; x < c.width; x += 3)
-      if (data[(y * c.width + x) * 4 + 3] > 100) {
-        if (!n) top = y;
-        sx += x, sy += y, n++;
-      }
-  return { path, cx: n ? sx / n : 0, cy: n ? sy / n : 0, top, ok: n > 0 };
-}
-
-let pictures: Picture[] | null = null;
-const picture = (v: number) => (pictures ??= [parse(topSvg), parse(sideSvg)])[v];
+const picture = (v: number) => pictureOf(VIEWS[v]);
 
 // ---------------------------------------------------------------- helpers
 
@@ -152,6 +88,8 @@ export interface MouseViewProps {
   /** "Title\nline 2"; Boxes rows may start with \x01 actuation, \x02 rapid trigger, \x03 haptics */
   labelFor?: (zone: Zone) => string;
   onZone?: (zone: Zone) => void;
+  /** a click on the shell outside the button zones (the sensor sits under it) */
+  onBody?: () => void;
 }
 
 class Renderer {
@@ -189,7 +127,9 @@ class Renderer {
   get flip() {
     return this.props.flip ?? true;
   }
+  /** Clickable zones; none when nothing listens for a click (the picture is then for looking only). */
   active(v: number): string[] {
+    if (!this.props.onZone) return [];
     const z = this.props.zones;
     return ZONES[VIEWS[v]].filter((n) => !z?.length || z.includes(n as Zone));
   }
@@ -203,13 +143,11 @@ class Renderer {
     const th = Math.round(Math.min(this.H * 0.24, 170)), tw = Math.round((th * p.w) / p.h);
     return { x: Math.round(this.W - tw - 16), y: Math.round(this.H - th - 38), w: tw, h: th };
   }
+  /** The same size and place on every tab: room for the widest callouts and the thumbnail is always kept. */
   fit(v: number): Rect {
     const p = picture(v), W = this.W, H = this.H;
-    let room = 8;
-    if (this.callouts === "lines") room = Math.min(260, W * 0.3);
-    else if (this.callouts === "boxes") room = Math.min(190, W * 0.28);
-    else if (this.thumbnail) room = this.thumbRect(1 - v).w + 22;
-    const s = Math.min(Math.max(50, W - 2 * room) / p.w, Math.max(50, H - 30) / p.h);
+    const room = Math.max(Math.min(260, W * 0.3), this.thumbRect(1 - v).w + 22);
+    const s = Math.min(Math.max(50, W - 2 * room) / p.w, Math.max(50, Math.min(H - 30, 720)) / p.h);
     const w = Math.round(p.w * s), h = Math.round(p.h * s);
     return { x: Math.round((W - w) / 2), y: Math.round((H - h) / 2), w, h };
   }
@@ -231,6 +169,16 @@ class Renderer {
       const z = pic.zones.get(act[i]);
       if (z && g.isPointInPath(z.path, x, y)) hit = act[i];
     }
+    g.restore();
+    return hit;
+  }
+  bodyAt(px: number, py: number): boolean {
+    if (this.anim || !this.props.onBody) return false;
+    const pic = picture(this.cur), r = this.fit(this.cur), body = pic.parts.find((p) => p.kind === "body");
+    const g = this.g;
+    g.save();
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    const hit = !!body && g.isPointInPath(body.path, ((px - r.x) * pic.w) / r.w, ((py - r.y) * pic.h) / r.h);
     g.restore();
     return hit;
   }
@@ -276,6 +224,8 @@ class Renderer {
     let v = this.cur, sx = 1;
     if (this.anim) (v = this.anim.p < 0.5 ? this.anim.from : this.anim.to), (sx = Math.max(0.02, Math.abs(Math.cos(Math.PI * this.anim.p))));
     const r = this.fit(v);
+    const placed = `${r.x},${r.y},${r.w},${r.h}`;
+    if (!this.anim && this.canvas.dataset.fit !== placed) this.canvas.dataset.fit = placed; // read by tools/parity/layout.mjs
     g.save(); // floor shadow
     g.translate(W / 2, r.y + r.h * 0.98);
     g.scale(r.w * 0.42 * sx, 14);
@@ -584,7 +534,7 @@ class Renderer {
     const th = this.inThumb(x, y);
     if (th !== this.thumbHover) (this.thumbHover = th), this.draw();
     const z = th ? "" : this.zoneAt(x, y);
-    this.setHover(z, th || !!z);
+    this.setHover(z, th || !!z || this.bodyAt(x, y));
   }
   release(x: number, y: number) {
     const dx = this.dragDx, dy = y - this.dragY;
@@ -595,6 +545,7 @@ class Renderer {
     if (this.inThumb(x, y)) return this.userFlip();
     const z = this.zoneAt(x, y);
     if (z) this.props.onZone?.(z as Zone);
+    else if (this.bodyAt(x, y)) this.props.onBody?.();
   }
 }
 
