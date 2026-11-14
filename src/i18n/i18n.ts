@@ -114,7 +114,7 @@ export function systemLanguage(prefs: readonly string[] = navigator.languages ??
 }
 
 /** Switches the UI language ("system" follows the browser). Resolves once the catalog is loaded. */
-export async function setLanguage(pick: string): Promise<void> {
+export async function setLanguage(pick: string, remember = true): Promise<void> {
   const code = pick === "system" ? systemLanguage() : pick;
   let next: Catalog | null = null;
   if (code !== "en") {
@@ -125,7 +125,7 @@ export async function setLanguage(pick: string): Promise<void> {
   current = next || code === "en" ? code : "en";
   choice = pick;
   try {
-    localStorage.setItem(LANG_KEY, pick);
+    if (remember) localStorage.setItem(LANG_KEY, pick);
   } catch {
     /* private mode: the choice lasts for this visit */
   }
@@ -134,7 +134,10 @@ export async function setLanguage(pick: string): Promise<void> {
   listeners.forEach((l) => l());
 }
 
+/** `?lang=ja` in the URL shows that language for this visit only (README screenshots). */
 export function initLanguage(): Promise<void> {
+  const forced = new URLSearchParams(location.search).get("lang");
+  if (forced && LANGUAGES.some((l) => l.code === forced)) return setLanguage(forced, false);
   let saved = "system";
   try {
     saved = localStorage.getItem(LANG_KEY) ?? "system";

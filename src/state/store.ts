@@ -3,6 +3,8 @@ import { useSyncExternalStore } from "react";
 import {
   Device, MODE_ONBOARD, sectorBlank, sectorCrcOk, type FeatureEntry, type Hits, type OnboardInfo,
 } from "../hid/device";
+import { confirmDialog } from "../components/dialogs";
+import { demoDevice } from "../hid/sim";
 import { HidppError } from "../hid/transport";
 import { f, t } from "../i18n/i18n";
 import { backupJson, parseBackup, restoreSectors, storeAutoBackup } from "../model/backup";
@@ -13,6 +15,7 @@ import {
 
 export interface DeviceInfo {
   name: string;
+  demo: boolean;
   index: number; // receiver slot 1..6, 0xFF cable
   productId: number;
   firmware: string[];
@@ -104,6 +107,7 @@ export function useStore<T>(select: (s: State) => T): T {
 
 let device: Device | null = null;
 let hidDevice: HIDDevice | null = null;
+let demo: HIDDevice | null = null;
 let backedUp = false;
 let toastId = 0;
 
@@ -120,8 +124,8 @@ function traffic(dir: "out" | "in", bytes: Uint8Array) {
 
 const message = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
-/** Runs a device job; failures become an error toast. Returns undefined when it failed. */
-export async function run<T>(job: (d: Device) => Promise<T>, busy = ""): Promise<T | undefined> {
+/** Runs a device job; failures become an error toast (`fail` words it). Returns undefined when it failed. */
+export async function run<T>(job: (d: Device) => Promise<T>, busy = "", fail = (m: string) => f(t("Mouse: %s"), m)): Promise<T | undefined> {
   if (!device) {
     toast(t("Not connected"), "error");
     return undefined;
@@ -130,7 +134,7 @@ export async function run<T>(job: (d: Device) => Promise<T>, busy = ""): Promise
   try {
     return await job(device);
   } catch (e) {
-    toast(f(t("Mouse: %s"), message(e)), "error");
+    toast(fail(message(e)), "error");
     if (e instanceof HidppError && e.message.startsWith("write failed")) dropDevice("The receiver stopped answering");
     return undefined;
   } finally {
@@ -164,11 +168,22 @@ export async function connect() {
   }
 }
 
+/** Opens the simulated demo mouse (no browser picker, nothing is sent to a real mouse). */
+export function connectDemo() {
+  demo ??= demoDevice();
+  return openDevice(demo);
+}
+
+/** `?demo` in the page address: start with the demo mouse. */
+export const demoRequested = () => new URLSearchParams(location.search).has("demo");
+
 let opening: Promise<boolean> | null = null;
 
 /** Reconnects to a receiver the user already allowed, without a picker. */
 export async function autoConnect() {
-  if (!state.supported || state.status !== "disconnected" || opening) return;
+  if (state.status !== "disconnected" || opening) return;
+  if (demoRequested()) return void connectDemo();
+  if (!state.supported) return;
   const granted = (await navigator.hid.getDevices()).filter(isHidpp);
   for (const d of granted) {
     if (await openDevice(d, true)) return;
@@ -213,6 +228,7 @@ export async function disconnect() {
 async function loadAll(d: Device, productId: number) {
   const info: DeviceInfo = {
     name: d.name || "PRO X3 SUPERSTRIKE",
+    demo: hidDevice === demo,
     index: d.index,
     productId,
     firmware: await d.firmware(),
@@ -293,7 +309,7 @@ export function setEdit(sector: number) {
   set({ edit: sector });
 }
 
-function markDirty(sector: number) {
+export function markDirty(sector: number) {
   set((s) => ({ dirty: s.dirty.includes(sector) ? s.dirty : [...s.dirty, sector] }));
 }
 
@@ -349,11 +365,14 @@ export async function activateProfile(sector: number) {
   toast(f(t("Profile %d is now active"), slotOf(state, now) + 1));
 }
 
+/** Switches the mouse to DPI stage n of the active profile now (a click on a stage chip). */
 export async function setStage(n: number) {
   const ok = await run((d) => d.setCurrentStage(n));
   if (ok === undefined || !state.info) return;
   set({ info: { ...state.info, stage: n } });
-  toast(f(t(state.dirty.includes(state.edit) ? "Stage %d is now active (save to use the new values)" : "Stage %d is now active"), n + 1));
+  toast(state.dirty.includes(state.edit)
+    ? f(t("Mouse now uses stage %d — save (Ctrl+S) to feel your new DPI values"), n + 1)
+    : f(t("Mouse now uses stage %d"), n + 1));
 }
 
 export async function setSurface(mode: number) {
@@ -364,7 +383,7 @@ export async function setSurface(mode: number) {
 }
 
 export async function setControlMode(mode: number) {
-  const ok = await run((d) => d.setOnboardMode(mode));
+  const ok = await run((d) => d.setOnboardMode(mode), "", (m) => f(t("Could not change the control mode: %s"), m));
   if (ok === undefined || !state.info) return;
   set({ info: { ...state.info, mode } });
   toast(t(mode === MODE_ONBOARD ? "Onboard memory mode" : "Host mode: saved profiles are ignored until you switch back"));
@@ -382,12 +401,14 @@ async function setupOnboard() {
   const factory = state.factory;
   if (!edited || !factory) return;
   const count = Math.min(5, Math.max(1, state.info?.onboard?.profiles ?? 5));
-  if (!hasLeftClick(edited) && !confirm(`${t("No button does Left click")}\n\n${t("After saving, no button on this profile sends a left click. Save anyway?")}`)) return;
-  if (!confirm(
-    `The mouse has no saved profiles yet: it runs on its built-in factory profile.\n\n` +
+  if (!hasLeftClick(edited) && !(await confirmNoLeftClick())) return;
+  if (!(await confirmDialog(
+    "Create onboard profiles",
+    `The mouse has no saved profiles yet: it runs on its built-in factory profile. ` +
     `Saving creates ${count} onboard profiles in the mouse memory, like G HUB does: Profile 1 with your changes, ` +
-    `the others as copies of the factory profile. A backup is made first. Continue?`,
-  )) return;
+    `the others as copies of the factory profile. A backup is made first.`,
+    t("Save"),
+  ))) return;
   const sectors = Array.from({ length: count }, (_, i) => i + 1);
   const ok = await run(async (d) => {
     storeAutoBackup(await backupJson(d));
@@ -399,25 +420,26 @@ async function setupOnboard() {
     await new Promise((r) => setTimeout(r, 100));
     for (const b of [0, 1]) await d.hitsSet(b, edited.hits[b]);
     return true;
-  }, "Setting up onboard profiles…");
-  if (!ok) {
-    toast("Setup failed. The mouse keeps using its factory profile; an automatic backup is on the Profiles page.", "error");
-    return;
-  }
+  }, "Setting up onboard profiles…", saveFailed);
+  if (!ok) return;
   set({ edit: 1 });
   await revert();
   toast("Onboard profiles created — Profile 1 is active and has your settings");
 }
 
+const saveFailed = (m: string) => f(t("Save failed: %s. Backups: %s"), m, "this browser");
+
+const confirmNoLeftClick = () => confirmDialog(
+  t("No button does Left click"), t("After saving, no button on this profile sends a left click. Save anyway?"), t("Save anyway"), "destructive",
+);
+
 /** Writes every unsaved sector. Makes a whole-memory backup first, once per session. */
 export async function save() {
   if (state.status !== "connected" || !state.dirty.length) return;
   if (state.blank) return setupOnboard();
-  for (const sec of state.dirty) {
-    if (sec === DIR_SECTOR || hasLeftClick(state.profiles[sec])) continue;
-    if (!confirm(`${t("No button does Left click")} (${f(t("Profile %d"), slotOf(state, sec) + 1)})\n\n${t("After saving, no button on this profile sends a left click. Save anyway?")}`)) return;
-    break;
-  }
+  const noLeftClick = state.dirty.some((s) => s !== DIR_SECTOR && !hasLeftClick(state.profiles[s]));
+  if (noLeftClick && !(await confirmNoLeftClick())) return;
+  if (state.status !== "connected" || !state.dirty.length) return;
   const writes = state.dirty.filter((s) => s !== DIR_SECTOR).map((s) => ({ sector: s, raw: encodeProfile(state.profiles[s]) }));
   const dirNew = state.dirty.includes(DIR_SECTOR) ? encodeDirectory(state.dirRaw, state.dir) : null;
   const active = state.active;
@@ -439,11 +461,8 @@ export async function save() {
       if (p.stages[stage]?.x) await d.setCurrentStage(stage); // a reload resets the stage
     }
     return { written, dirWritten };
-  }, t("Writing to the mouse memory…"));
-  if (!result) {
-    toast("Save failed. An automatic backup is on the Profiles page.", "error");
-    return;
-  }
+  }, t("Writing to the mouse memory…"), saveFailed);
+  if (!result) return;
   set((s) => {
     const profiles = { ...s.profiles };
     for (const w of result.written) profiles[w.sector] = parseProfile(w.sector, w.raw);
@@ -453,20 +472,20 @@ export async function save() {
 }
 
 export async function backupNow(): Promise<string | undefined> {
-  return run((d) => backupJson(d), "Reading the whole memory…");
+  return run((d) => backupJson(d), "Reading the whole memory…", (m) => f(t("Backup failed: %s"), m));
 }
 
 export async function restoreBackup(text: string) {
   const secs = parseBackup(text);
   if (typeof secs === "string") {
-    toast(secs, "error");
+    toast(f(t("Restore failed: %s"), secs), "error");
     return;
   }
   const ok = await run(async (d) => {
     storeAutoBackup(await backupJson(d)); // the current memory, in case the restore was a mistake
     await restoreSectors(d, secs);
     return true;
-  }, "Restoring memory…");
+  }, "Restoring memory…", (m) => f(t("Restore failed: %s"), m));
   if (!ok) return;
   toast(t("Memory restored"));
   await revert();

@@ -1,105 +1,148 @@
 <div align="center">
 
-<img src="public/favicon.svg" width="96" alt="">
+<img src="public/favicon.svg" width="88" alt="">
 
-# SuperStrike Studio Web
+# SuperStrike Studio Plus
 
-**Tune the Logitech PRO X3 / PRO X2 SUPERSTRIKE from your browser — no install, no G HUB.**
+## Set up your SUPERSTRIKE in a minute. Right in your browser.
 
-**[Open the app → truecarry.github.io/superstrike-studio](https://truecarry.github.io/superstrike-studio/)**
+The lightweight G HUB alternative for the Logitech **PRO X3** and **PRO X2 SUPERSTRIKE**.<br>
+Tune it, save it into the mouse, close the tab. Nothing to install, nothing left running.
+
+<a href="https://truecarry.github.io/superstrike-studio/"><img src="https://img.shields.io/badge/Open_the_app-3b9cff?style=for-the-badge" alt="Open the app"></a>&nbsp;<a href="https://truecarry.github.io/superstrike-studio/?demo"><img src="https://img.shields.io/badge/Try_the_demo-444?style=for-the-badge" alt="Try the demo, no mouse needed"></a>
+
+<img src="docs/illustrations/hero.gif" width="720" alt="The mouse showing each setting in turn: click point, rapid trigger, click haptics, sensor, buttons and profiles">
+
+✓ **No install** &nbsp;&nbsp; ✓ **Nothing in the background** &nbsp;&nbsp; ✓ **No account** &nbsp;&nbsp; ✓ **Free and open source**
+
+<sub>English · 简体中文 · 繁體中文 · 日本語 · 한국어 · Русский · Українська · Español · Português · Français · Deutsch ·
+Italiano · Polski · Türkçe · العربية · हिन्दी · বাংলা · اردو · Bahasa Indonesia · Tiếng Việt · ไทย</sub>
 
 </div>
 
-Actuation point, rapid trigger and click haptics, button actions, DPI stages, polling rate and
-power settings, written into the mouse's onboard memory over [WebHID](https://developer.mozilla.org/docs/Web/API/WebHID_API).
-The settings keep working on any computer with the page closed.
+---
 
-This is a browser port of [SuperStrike Studio](https://github.com/Adhamura/superstrike-studio)
-by the SuperStrike Studio authors (a native GTK app for Linux, Windows and macOS). The protocol
-knowledge, the mouse drawings and the translations come from that project.
+## Set it once. Forget the software.
 
-> Not affiliated with or endorsed by Logitech. Logitech, G HUB, PRO, LIGHTSPEED and SUPERSTRIKE are
-> trademarks of Logitech.
+Every setting is saved **into the mouse itself**. Close the tab: no tray icon, no service, no
+account, and no update can change how your mouse feels overnight.
 
-## What it does
+## Make the click yours
 
-| Page | |
-|---|---|
-| **HITS tuning** | Actuation 1–10, rapid trigger 1–5, haptics 0–5, per button or both · your own presets, built-in presets and 12 published pro-player presets · copy and import G HUB HITS codes · click test pad |
-| **Buttons** | Mouse, keyboard (with modifiers, or record a key), media, function (DPI, profiles, scroll, tilt, battery), disabled or factory default · normal and DPI-shift layer |
-| **Sensor** | Five DPI stages (X/Y, lift-off distance, default stage) · polling rate for wireless and cable · angle snapping · gaming surface mode · scroll filter · power timers |
-| **Profiles** | Five onboard profiles: rename, profile cycle, activate, copy, reset to factory, export/import · onboard or host control mode · whole-memory backup and restore |
-| **Device** | Connection, battery, firmware, onboard memory, HID++ feature table, raw HID traffic · language · colours |
+Three dials for each main button. Feel every change live, or start from a preset or a HITS code.
 
-21 languages: English, 简体中文, 繁體中文, 日本語, 한국어, Русский, Українська, Español, Português (Brasil),
-Français, Deutsch, Italiano, Polski, Türkçe, العربية, हिन्दी, বাংলা, اردو, Bahasa Indonesia, Tiếng Việt, ไทย.
+<table>
+  <tr>
+    <td width="33%"><img src="docs/illustrations/actuation.gif" alt="The same press on two mice: the shallow click point fires early, the deep one fires near the bottom"></td>
+    <td width="33%"><img src="docs/illustrations/rapid.gif" alt="The same quick button bounces: without rapid trigger one click counts, with it every bounce counts"></td>
+    <td width="33%"><img src="docs/illustrations/haptics.gif" alt="Six clicks, from no vibration to a firm thump"></td>
+  </tr>
+  <tr>
+    <td><b>Actuation point</b><br>Click on a light touch, or only on a deep press</td>
+    <td><b>Rapid trigger</b><br>Click again without lifting your finger all the way</td>
+    <td><b>Click haptics</b><br>From silent to a firm thump under your finger</td>
+  </tr>
+</table>
 
-## Requirements
+## The whole mouse, not just the click
 
-- **Chrome, Edge, Brave, Opera** or another Chromium browser, in a normal window. Firefox and Safari
-  have no WebHID.
-- The mouse on its LIGHTSPEED receiver or on its cable. Pick **USB Receiver** when the browser asks;
-  it remembers the choice.
-- **Close Logitech G HUB** (also in the tray / menu bar) — it can keep the receiver busy.
+Sensor, buttons and profiles, all saved in the mouse.
 
-**Linux:** your user needs access to the receiver. Add a udev rule once, then replug the receiver:
+<table>
+  <tr>
+    <td width="33%"><img src="docs/illustrations/polling.gif" alt="The same hand movement: at a low polling rate the cursor jumps in steps, at a high one it glides smoothly"></td>
+    <td width="33%"><img src="docs/illustrations/dpi.gif" alt="The same hand movement: at normal DPI the cursor overshoots the target, holding DPI shift it lands on it"></td>
+    <td width="33%"><img src="docs/illustrations/remap.gif" alt="The wheel and thumb buttons each do something else: DPI change, play/pause, copy"></td>
+  </tr>
+  <tr>
+    <td><b>Polling rate</b><br>The cursor follows your hand without steps</td>
+    <td><b>DPI shift</b><br>Hold a button to slow down for a precise shot</td>
+    <td><b>Any button, any action</b><br>Keys, shortcuts, media, DPI or profile switching</td>
+  </tr>
+  <tr>
+    <td><img src="docs/illustrations/profiles.gif" alt="One button press switches click point, speed and click strength together"></td>
+    <td><img src="docs/illustrations/snap.gif" alt="The same shaky hand: without angle snapping the line wobbles, with it the line is straight"></td>
+    <td><img src="docs/illustrations/lod.gif" alt="Lifting the mouse to reposition it: set high, the cursor drifts back; set low, it stays put"></td>
+  </tr>
+  <tr>
+    <td><b>Five profiles</b><br>One button switches everything at once</td>
+    <td><b>Angle snapping</b><br>Straight lines from a not-quite-straight hand</td>
+    <td><b>Lift-off distance</b><br>Lift the mouse and the cursor stays put</td>
+  </tr>
+</table>
+
+## Up and running in a minute
+
+1. **[Open the page](https://truecarry.github.io/superstrike-studio/)** in Chrome or Edge — Windows, macOS or Linux.
+2. **Click Connect** and pick **USB Receiver**.
+3. **Tune it** and press **Save to mouse**. Close the tab. Done.
+
+Next time the page finds your mouse by itself. Using G HUB? Quit it first (also in the tray) so it
+lets go of the receiver.
+
+## Plus vs G HUB
+
+| | **Plus** | **G HUB** |
+|---|:-:|:-:|
+| Actuation, rapid trigger, haptics, presets | ✅ | ✅ |
+| Buttons, DPI, polling rate, profiles | ✅ | ✅ |
+| Opens in the browser, no install | ✅ | ❌ |
+| Closes with the tab, no background service | ✅ | ❌ |
+| Windows, macOS and Linux | ✅ | ❌ |
+| Try it without a mouse | ✅ | ❌ |
+| Haptics saved in the mouse | ✅ | ❌ |
+| Clicks-per-second test pad | ✅ | ❌ |
+| Lighting, macros, other Logitech gear | ❌ | ✅ |
+
+<sub>Need lighting or macros? G HUB is the better fit.</sub>
+
+## Questions
+
+**Is it safe to let a web page talk to my mouse?**
+The browser only lets the page reach the device you pick in its own pop-up, and only while the tab
+is open. Nothing is uploaded: presets and backups stay in your browser. The code is open for anyone
+to check.
+
+**Can it break my mouse?**
+It writes the same onboard profiles G HUB does and never touches the factory profile. Every save is
+read back and verified, a full backup is taken before your first save, and **Reset to factory** is
+always one click away.
+
+**Can I go back to G HUB?**
+Any time. Just don't run both at once.
+
+**Does it work in Firefox or Safari?**
+Not yet — they don't let web pages talk to USB devices. Use Chrome, Edge, Brave or Opera.
+
+**My mouse doesn't show up.**
+Turn the mouse on or move it, quit G HUB, then **Connect** again and pick **USB Receiver**. On macOS,
+allow Input Monitoring for the browser if asked. On Linux, run this once and replug the receiver:
 
 ```sh
 echo 'KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-superstrike.rules
 sudo udevadm control --reload-rules && sudo udevadm trigger
 ```
 
-**Windows:** nothing to set up. **macOS:** if macOS asks for Input Monitoring, allow it for the browser.
+**PRO X2 or PRO X3?**
+Both. It was verified on a PRO X3 SUPERSTRIKE; the PRO X2 uses the same features, and reports are
+welcome.
 
-## Saving and safety
+<div align="center">
 
-Changes are a preview until **Save to mouse** (Ctrl+S); HITS changes on the active profile are felt
-at once. When saving:
+<a href="https://truecarry.github.io/superstrike-studio/"><img src="https://img.shields.io/badge/Open_the_app-3b9cff?style=for-the-badge" alt="Open the app"></a>&nbsp;<a href="https://truecarry.github.io/superstrike-studio/?demo"><img src="https://img.shields.io/badge/Try_the_demo-444?style=for-the-badge" alt="Try the demo, no mouse needed"></a>
 
-- every memory sector is written with its CRC and read back to verify it;
-- a backup of the whole memory is kept in the browser before the first save of each visit and
-  before every restore (Profiles → Backup), and can be downloaded;
-- if no button would send a left click any more, the app asks first.
+</div>
 
-A mouse that never had profiles saved runs on its built-in factory profile, which can not be changed.
-The app shows this, and the first save creates the five onboard profiles (Profile 1 with your
-changes, the others as factory copies), like G HUB does.
+---
 
-Nothing leaves your computer: the page only talks to the mouse, and presets, backups and the
-language choice stay in the browser's local storage.
+**Developers.** Building, testing and the code layout: [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Development
+**Credits.** Made by TrueCarry and thekiba. Built on
+[SuperStrike Studio](https://github.com/Adhamura/superstrike-studio) by the SuperStrike Studio
+authors, whose protocol work, mouse drawings and translations made this possible.
 
-Needs [Bun](https://bun.sh).
+**License.** MIT — see [LICENSE](LICENSE). Copyright © 2026 TrueCarry and thekiba; based on
+SuperStrike Studio, copyright © 2026 The SuperStrike Studio authors.
 
-```sh
-bun install
-bun run dev      # http://127.0.0.1:8017
-bun test         # profile format, HITS codes, translations
-bun run build    # static site in dist/, works from any folder (hash routes)
-```
-
-Every push to `main` is tested, built and published to GitHub Pages by
-[.github/workflows/pages.yml](.github/workflows/pages.yml).
-
-| Path | |
-|---|---|
-| `src/hid/` | HID++ 2.0 over WebHID: framing, request queue, device features, memory sectors |
-| `src/model/` | Onboard profile format, button actions, directory, HITS codes, backups |
-| `src/state/store.ts` | App state and every action that talks to the mouse |
-| `src/pages/`, `src/components/` | React UI (React Router), mouse drawing, controls |
-| `src/i18n/` | gettext catalogs loader: `t()`, `tc()` (context), `tn()` (plural), `f()` (printf) |
-| `po/` | Translations (`.po`, one per language) and the template `superstrike-studio.pot` |
-| `public/hid-test.html` | The first single-file HITS test page |
-
-### Translations
-
-The catalogs in `po/` are standard gettext files from SuperStrike Studio. UI text goes through
-`t("English text")` (or `tc("context", …)` where upstream uses a context) and is looked up by its
-exact English text; a string without a translation shows in English. A few texts that only the
-web app has are English for now — add them to the `.po` files to translate them.
-
-## License
-
-MIT — see [LICENSE](LICENSE). Copyright © 2026 The SuperStrike Studio authors; the web port is under
-the same license.
+<sub>Not affiliated with or endorsed by Logitech. Logitech, G HUB, PRO, LIGHTSPEED and SUPERSTRIKE
+are trademarks of Logitech.</sub>
