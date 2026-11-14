@@ -1,6 +1,6 @@
 // Aim panel (upstream page_sensor.cpp): how the cursor moves. DPI stages, DPI shift, polling rate,
-// lift-off distance, angle snapping and surface tuning, each on a card with its animation.
-// The scroll filter is on Buttons (Scroll wheel) and the power timers on Device (Battery life).
+// lift-off distance, angle snapping, the scroll filter and surface tuning, each on a card with its
+// animation. The power timers are on Device (Battery life).
 import { useState } from "react";
 import { FxCard, Segments } from "../components/cards";
 import { Boxed, SpinRow, SwitchRow } from "../components/controls";
@@ -77,6 +77,7 @@ export default function AimPage() {
   };
   const lod = Math.min(3, Math.max(1, st.lod || 2));
   const surface = Math.max(0, info.surface);
+  const filterMs = Math.min(profile.scrollFilter, 100) * 10;
 
   return (
     <>
@@ -140,6 +141,15 @@ export default function AimPage() {
         <p className="ss-hint">{t("Straightens near-horizontal and vertical lines")}</p>
         <Segments<number> value={profile.angleSnap ? 1 : 0} onChange={(v) => edit((p) => (p.angleSnap = v))} label={t("Angle snapping")}
           options={[{ value: 0, label: tc("level value", "off") }, { value: 1, label: tc("surface mode", "On") }]} />
+      </FxCard>
+
+      <FxCard title={t("Scroll wheel")} icon="mouse" scene="scroll" sceneValue={{ ms: filterMs }} tall
+        value={filterMs ? <>{filterMs}<small>ms</small></> : tc("level value", "off")}>
+        <p className="ss-hint">{t("Bunny-hop scroll filter, 0 = off")}</p>
+        <Boxed>
+          <SpinRow title={t("Scroll filter (ms)")} value={filterMs} min={0} max={1000} step={10}
+            onCommit={(v) => edit((p) => (p.scrollFilter = Math.round(v / 10)))} />
+        </Boxed>
       </FxCard>
 
       <FxCard title={t("Surface tuning")} icon="sensor" scene="surface" sceneValue={{ mode: surface }} tall live
