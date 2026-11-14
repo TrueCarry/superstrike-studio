@@ -65,8 +65,8 @@ export default function DevicePage() {
 
       <FxCard title={on ? info.name : "PRO X3 SUPERSTRIKE"} icon="mouse" value={on && info.battery >= 0 ? <>{info.battery}<small>%</small></> : undefined}>
         <div className="device-lines">
-          <span>{battery} · {link}</span>
-          <span className="ss-hint">{f(t("Firmware %s"), on ? info.firmware.join(", ") : "—")}{memory && ` · ${memory}`}</span>
+          <span title={t("Battery")}>{battery} · <span title={t("Connection")}>{link}</span></span>
+          <span className="ss-hint"><span title={t("Firmware")}>{f(t("Firmware %s"), on ? info.firmware.join(", ") : "—")}</span>{memory && <span title={t("Onboard memory")}> · {memory}</span>}</span>
         </div>
         <div><button disabled={!connected} onClick={() => void revert()}><Icon name="refresh" /> {t("Reload from mouse")}</button></div>
       </FxCard>
@@ -119,14 +119,14 @@ function BackupCard() {
       <p className="ss-hint">{f(t("The app also makes a full backup automatically before the first save of each session, in %s."), "this browser")}</p>
       <input ref={fileInput} type="file" accept=".json,application/json" hidden />
       <div className="button-row">
-        <button disabled={!connected} onClick={async () => {
+        <button disabled={!connected} title={t("All profiles, the directory and the factory profile, to a file")} onClick={async () => {
           const text = await backupNow();
           if (!text) return;
           const name = `superstrike-backup-${stamp()}.json`;
           download(name, text);
           toast(f(t("Backup saved: %s"), name));
         }}>{t("Back up whole memory…")}</button>
-        <button disabled={!connected} onClick={async () => {
+        <button disabled={!connected} title={t("Writes the saved sectors back into the mouse")} onClick={async () => {
           const text = await pickFile(fileInput.current);
           if (text !== null) await confirmRestore(text, fileInput.current?.files?.[0]?.name ?? "the chosen file");
         }}>{t("Restore from backup…")}</button>

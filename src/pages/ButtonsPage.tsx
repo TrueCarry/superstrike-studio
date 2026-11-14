@@ -156,7 +156,7 @@ export default function ButtonsPage() {
       {profile && (
         <FxCard title={t("Scroll wheel")} icon="mouse" scene="scroll" sceneValue={{ ms: Math.min(profile.scrollFilter, 100) * 10 }} tall
           value={profile.scrollFilter ? <>{profile.scrollFilter * 10}<small>ms</small></> : tc("level value", "off")}>
-          <p className="ss-hint">{t("The scroll filter drops wheel steps that come too close together, for example when bunny hopping on the wheel. 0 = off.")}</p>
+          <p className="ss-hint">{t("Bunny-hop scroll filter, 0 = off")}</p>
           <Boxed>
             <SpinRow title={t("Scroll filter (ms)")} value={Math.min(profile.scrollFilter, 100) * 10} min={0} max={1000} step={10}
               onCommit={(v) => updateProfile((p) => (p.scrollFilter = Math.round(v / 10)))} />

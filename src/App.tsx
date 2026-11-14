@@ -237,16 +237,16 @@ function ConnectScreen() {
             {busy ? <><span className="spinner" />{t("Searching for the mouse…")}</> : "Connect the mouse…"}
           </button>
         )}
-        <button className="pill big" disabled={busy} onClick={() => void connectDemo()}>Try the demo</button>
+        <button className="pill big" disabled={busy} onClick={() => void connectDemo()}>{t("Try the demo")}</button>
       </div>
       {error && <p className="error">{error}</p>}
       {supported && !embedded && (
         <>
-          {!showHelp && <button className="flat help-link" onClick={() => setHelp(true)}>Trouble connecting?</button>}
+          {!showHelp && <button className="flat help-link" onClick={() => setHelp(true)}>{t("Trouble connecting?")}</button>}
           {showHelp && (
             <div className="connect-help">
-              <p className="ss-hint">Pick the LIGHTSPEED receiver ("USB Receiver") or the mouse on its cable. The browser remembers your choice.</p>
-              <p className="ss-hint">Linux: the list is empty? Your user needs access to the receiver. Add a udev rule, then replug the receiver:</p>
+              <p className="ss-hint">{t("Pick the LIGHTSPEED receiver (\"USB Receiver\") or the mouse on its cable. The browser remembers your choice.")}</p>
+              <p className="ss-hint">{t("Linux: the list is empty? Your user needs access to the receiver. Add a udev rule, then replug the receiver:")}</p>
               <pre>{`echo 'KERNEL=="hidraw*", SUBSYSTEM=="hidraw", ATTRS{idVendor}=="046d", TAG+="uaccess"' | sudo tee /etc/udev/rules.d/70-superstrike.rules
 sudo udevadm control --reload-rules && sudo udevadm trigger`}</pre>
             </div>

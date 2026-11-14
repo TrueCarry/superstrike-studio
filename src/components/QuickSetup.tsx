@@ -1,6 +1,6 @@
 // Quick setup for a new mouse: pick a click feel by its animation, pick a speed, save. It writes through
 // the same store actions as the panels, so everything can be refined afterwards.
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { f, t } from "../i18n/i18n";
 import { Icon } from "./icons";
 import { Illustration } from "../illustrations/Illustration";
@@ -39,15 +39,33 @@ export function QuickSetup() {
   const [step, setStep] = useState(0);
   const [feel, setFeel] = useState<string | null>(null);
   const [speed, setSpeed] = useState<number | null>(null);
+  const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
     setStep(0);
     setFeel(null);
     setSpeed(null);
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setStudio({ setup: false });
-    window.addEventListener("keydown", esc);
-    return () => window.removeEventListener("keydown", esc);
+    const back = document.activeElement as HTMLElement | null;
+    // Escape closes; Tab stays inside the dialog
+    const keys = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return setStudio({ setup: false });
+      if (e.key !== "Tab" || !box.current) return;
+      const all = [...box.current.querySelectorAll<HTMLElement>("button:not(:disabled)")];
+      const i = all.indexOf(document.activeElement as HTMLElement);
+      if (e.shiftKey ? i <= 0 : i === all.length - 1) {
+        e.preventDefault();
+        all[e.shiftKey ? all.length - 1 : 0]?.focus();
+      }
+    };
+    window.addEventListener("keydown", keys);
+    return () => {
+      window.removeEventListener("keydown", keys);
+      back?.focus();
+    };
   }, [open]);
+  useEffect(() => { // each step starts with the focus on its first choice
+    if (open) requestAnimationFrame(() => box.current?.querySelector<HTMLElement>(".setup-page button")?.focus());
+  }, [open, step]);
   if (!open || !profile) return null;
 
   const close = () => setStudio({ setup: false });
@@ -73,7 +91,7 @@ export function QuickSetup() {
 
   return (
     <div className="setup-backdrop" onClick={(e) => e.target === e.currentTarget && close()}>
-      <div className="setup" role="dialog" aria-modal="true" aria-label={t("Quick setup")}>
+      <div className="setup" role="dialog" aria-modal="true" aria-label={t("Quick setup")} ref={box}>
         <header>
           <h2>{t("Quick setup")}</h2>
           <span className="spacer" />

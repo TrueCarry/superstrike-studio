@@ -23,7 +23,7 @@ export function FxCard<N extends SceneName>(props: {
         <div className="fx-head">
           {props.icon && <Icon name={props.icon} />}
           <h3>{props.title}</h3>
-          {props.live && <span className="ss-badge live" title={t("The mouse takes this at once. It is not part of a profile and needs no saving.")}>{t("Applies at once")}</span>}
+          {props.live && <span className="ss-badge live" title={t("Applies at once. Device setting, not per profile")}>{t("Applies at once")}</span>}
           {props.value !== undefined && <span className="fx-value">{props.value}</span>}
         </div>
         {props.children}

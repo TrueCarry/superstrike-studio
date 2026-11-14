@@ -57,7 +57,7 @@ export default function ProfilesPage() {
       ) : (
         <FxCard title={t("Profiles")} icon="profiles" value={<>{cycle.length}<small>{f(t("of %d in the cycle"), dir.length)}</small></>}
           scene="profiles" sceneValue={{ values: cycle.map((x) => sceneValue(x.p)), names: cycle.map((x) => x.p.name || slotText(x.slot)) }} tall>
-          <p className="ss-hint">{t("Profiles live inside the mouse and work on any computer without this app. The profile button steps through the ones in the cycle.")}</p>
+          <p className="ss-hint">{t("Profiles live inside the mouse and work on any computer without this app.")} {t("The profile button steps through the ones in the cycle.")}</p>
           <ol className="profile-list">
             {dir.map((e, slot) => <ProfileRow key={e.sector} slot={slot} fileInput={fileInput} />)}
           </ol>
@@ -131,20 +131,22 @@ function ProfileRow(props: { slot: number; fileInput: React.RefObject<HTMLInputE
         <div className="badges">
           {active && <span className="ss-badge accent">{tc("profile badge", "Active")}</span>}
           {unsaved && <span className="ss-badge warn">{t("Unsaved")}</span>}
-          <label className="cycle" title={t("In profile cycle")}>
-            <Switch checked={entry.enabled} onChange={(v) => setDirEnabled(slot, v)} label={t("In profile cycle")} />
-            <span>{t("In cycle")}</span>
-          </label>
         </div>
+        <label className="cycle" title={t("In profile cycle")}>
+          <span>{t("In cycle")}</span>
+          <Switch checked={entry.enabled} onChange={(v) => setDirEnabled(slot, v)} label={t("In profile cycle")} />
+        </label>
       </div>
-      {p && (
-        <div className="summary" aria-label={t("Summary")}>
-          <span title={t("Actuation")}><Icon name="actuation" />{p.hits[0].act}</span>
-          <span title="DPI"><Icon name="sensor" />{p.stages[p.defaultStage]?.x || "—"}</span>
-          <span title={t("Haptics")}><Icon name="haptics" />{p.hits[0].hap}</span>
-          <span className={p.hits[0].rtOn ? "rt" : "rt off"} title={t("Rapid trigger")}><Icon name="rapid" />{p.hits[0].rtOn ? p.hits[0].rt : "–"}</span>
-        </div>
-      )}
+      <div className="summary" aria-label={t("Summary")}>
+        {p && (
+          <>
+            <span title={t("Actuation")}><Icon name="actuation" />{p.hits[0].act}</span>
+            <span title="DPI"><Icon name="sensor" />{p.stages[p.defaultStage]?.x || "—"}</span>
+            <span title={t("Haptics")}><Icon name="haptics" />{p.hits[0].hap}</span>
+            <span className={p.hits[0].rtOn ? "rt" : "rt off"} title={t("Rapid trigger")}><Icon name="rapid" />{p.hits[0].rtOn ? p.hits[0].rt : "–"}</span>
+          </>
+        )}
+      </div>
       <div className="acts">
         <button disabled={!p || editing} onClick={() => (setEdit(sector), navigate("/click"))}>{editing ? tc("profile card", "Editing") : tc("profile card", "Edit")}</button>
         <button className={active ? "" : "suggested"} disabled={active || !connected || !p} onClick={() => void activateProfile(sector)}>{tc("profile card", "Activate")}</button>
