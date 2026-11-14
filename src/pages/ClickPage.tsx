@@ -2,6 +2,7 @@
 // each on a card whose animation plays the value set on that button. The click test lives on the
 // large mouse (Test clicks).
 import { FxCard, Segments, Steps } from "../components/cards";
+import { LivePressBars } from "../components/PressMonitor";
 import { IconButton, MenuButton, Switch } from "../components/controls";
 import type { Hits } from "../hid/device";
 import { f, t, tc } from "../i18n/i18n";
@@ -57,6 +58,7 @@ export default function ClickPage() {
           </div>
           <IconButton icon="rotate" tooltip={t("Reset to 5")} onClick={() => edit((x) => (x.act = 5))} />
         </div>
+        <LivePressBars />
       </FxCard>
 
       <FxCard className="rapid" title={t("Rapid trigger")} icon="rapid" value={h.rtOn ? <>{h.rt}<small>{t("of 5")}</small></> : tc("level value", "off")}

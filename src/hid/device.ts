@@ -188,6 +188,19 @@ export class Device {
     return { act: r[1] >> 2, rt: r[2] >> 2, rtOn: (r[2] & 1) !== 0, hap: r[3] >> 2 };
   }
 
+  /**
+   * HITS monitoring streams (undocumented; research: github.com/fawhfi/superstrike-sdk). fn4 reads
+   * [flags, seconds left]; fn3 sets the flags for `leaseS` seconds, after which they switch off again.
+   * Nothing is stored. Bit 0: event 0; bit 1: events 1 (travel), 2 and 3.
+   */
+  async monitorGet(): Promise<{ flags: number; lease: number }> {
+    const r = await this.call(F.HITS, 4);
+    return { flags: r[0] & 0x03, lease: r[1] };
+  }
+  async monitorSet(flags: number, leaseS: number): Promise<void> {
+    await this.call(F.HITS, 3, [flags & 0x03, leaseS & 0xff]);
+  }
+
   async hitsSet(button: number, h: Hits): Promise<void> {
     await this.call(F.HITS, 1, [button, (h.act << 2) & 0xfc, ((h.rt << 2) & 0xfc) | (h.rtOn ? 1 : 0), (h.hap << 2) & 0xfc]);
   }

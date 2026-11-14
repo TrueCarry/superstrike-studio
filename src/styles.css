@@ -33,7 +33,9 @@
 }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; margin: 0; }
-body { overflow: hidden; }
+body { overflow: hidden; user-select: none; }
+/* clicking around to try the buttons shouldn't select text; what is there to copy still can be */
+input, textarea, [contenteditable=true], pre.log, .streams .mono { user-select: text; }
 button, select, input { font: inherit; color: inherit; }
 a { color: var(--accent-fg); }
 code, pre { font-family: ui-monospace, "Cascadia Mono", monospace; }
@@ -404,3 +406,44 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
   .topbar button.save { padding: 0 14px; }
   .topbar { gap: 8px; padding: 8px 10px; }
 }
+
+/* live press: bars on the Actuation card, charts on the Device panel */
+.live-press { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--line); }
+.press-bar { display: grid; grid-template-columns: 44px 1fr; align-items: center; gap: 10px; }
+.press-label { font-size: 13px; color: var(--dim); }
+.press-track { position: relative; height: 10px; border-radius: 5px; background: rgb(255 255 255 / 8%); overflow: hidden; }
+.press-fill { position: absolute; inset-block: 0; inset-inline-start: 0; background: var(--accent); border-radius: 5px; }
+.press-bar.down .press-fill { background: var(--ok); }
+.press-click, .press-last { position: absolute; inset-block: 0; width: 2px; margin-inline-start: -1px; }
+.press-click { background: var(--warn); }
+.press-last { background: #fff; opacity: .85; }
+.press-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--dim); }
+.press-legend .key::before { content: ""; display: inline-block; width: 10px; height: 3px; border-radius: 2px; margin-inline-end: 6px; vertical-align: middle; }
+.press-legend .key.fill::before { background: var(--ok); height: 8px; }
+.press-legend .key.click::before { background: var(--warn); width: 2px; height: 10px; }
+.press-legend .key.last::before { background: #fff; width: 2px; height: 10px; }
+.press-legend .key.travel::before { background: var(--accent); }
+.press-legend .key.top::before { background: #7ee0ff; }
+.press-legend .key.bottom::before { background: #b48cff; }
+.press-monitor .press-legend .key.click::before { width: 10px; height: 3px; }
+.press-legend .key.down::before { background: rgb(61 220 132 / 35%); height: 10px; }
+.press-plot { position: relative; height: 130px; border-radius: 10px; background: rgb(255 255 255 / 4%); overflow: hidden; padding-inline-start: 36px; }
+.press-plot svg { display: block; width: 100%; height: 100%; }
+.press-plot path { fill: none; stroke-width: 1.5px; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.press-plot path.travel { stroke: var(--accent); stroke-width: 2px; }
+.press-plot path.top { stroke: #7ee0ff; }
+.press-plot path.bottom { stroke: #b48cff; }
+.press-plot path.click { stroke: var(--warn); stroke-dasharray: 4 3; }
+.press-plot line.grid { stroke: var(--line); stroke-width: 1px; vector-effect: non-scaling-stroke; }
+.press-plot rect.down { fill: rgb(61 220 132 / 18%); }
+.press-axis { position: absolute; inset-inline-start: 6px; font-size: 10px; color: var(--dim); font-variant-numeric: tabular-nums; line-height: 1; }
+.press-axis.mid { transform: translateY(-50%); }
+.press-chart { margin: 0; }
+.press-chart figcaption { font-size: 12px; color: var(--dim); margin-bottom: 4px; }
+.streams td.mono:not(.raw) { white-space: nowrap; }
+.streams { width: 100%; border-collapse: collapse; font-size: 12px; }
+.streams th { text-align: start; font-weight: 600; color: var(--dim); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+.streams td { padding: 4px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.streams td small { color: var(--dim); }
+.streams .mono { font-family: ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.streams .raw { word-break: break-all; font-size: 11px; }

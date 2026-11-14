@@ -15,6 +15,7 @@ export interface MouseInput {
 }
 
 let input: MouseInput = { pressed: new Set(), wheelTick: 0, wheelDelta: 1 };
+export const getMouseInput = () => input;
 const listeners = new Set<() => void>();
 const set = (patch: Partial<MouseInput>) => {
   input = { ...input, ...patch };
@@ -38,11 +39,17 @@ export const session = { since: Date.now(), clicks: 0, notches: 0, travel: 0 };
 let lastPointer: [number, number] | null = null;
 
 if (typeof window !== "undefined") {
-  // The side buttons would otherwise make the browser go back / forward and leave the app.
+  // Mouse buttons are for trying the mouse here, not for the browser: the side buttons would go back /
+  // forward and leave the app, the middle one would start autoscroll, paste (Linux) or open links in a tab.
   for (const type of ["mouseup", "mousedown", "auxclick"] as const)
     window.addEventListener(type, (e) => {
-      if (e.button === 3 || e.button === 4) e.preventDefault();
+      if (e.button === 1 || e.button === 3 || e.button === 4) e.preventDefault();
     });
+  // No browser menu on right click, except in text fields (paste a HITS code, a preset name).
+  window.addEventListener("contextmenu", (e) => {
+    const el = e.target as HTMLElement | null;
+    if (!el?.closest("input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]), textarea, [contenteditable=true]")) e.preventDefault();
+  });
   window.addEventListener("pointerdown", (e) => {
     if (e.pointerType === "mouse") session.clicks++;
     if (BUTTON_ZONE[e.button]) inputPress(BUTTON_ZONE[e.button], true);

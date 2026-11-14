@@ -3,6 +3,7 @@
 // Not ported: "Check for updates" (the web page is always the latest version).
 import { useRef, useState } from "react";
 import { FxCard } from "../components/cards";
+import { LivePressCard } from "../components/PressMonitor";
 import { Boxed, ButtonRow, ExpanderRow, Row, SpinRow, Switch } from "../components/controls";
 import { ask, confirmDialog } from "../components/dialogs";
 import { Icon } from "../components/icons";
@@ -77,6 +78,7 @@ export default function DevicePage() {
       <AppCard />
 
       <h3 className="ss-title more-head">{t("More")}</h3>
+      <LivePressCard />
       <Developer />
     </>
   );
