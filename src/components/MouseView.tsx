@@ -620,12 +620,17 @@ export function MouseView(props: MouseViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const lastView = useRef(props.view);
   useLayoutEffect(() => {
     const rd = r.current!;
     rd.props = props;
     rd.shell = shell;
     rd.accent = accent;
-    rd.switchTo(VIEWS.indexOf(props.view), true);
+    // follow `view` only when it changes: a flip by the user stands until the page asks for another view
+    if (props.view !== lastView.current) {
+      lastView.current = props.view;
+      rd.switchTo(VIEWS.indexOf(props.view), true);
+    }
     rd.draw();
   });
 
