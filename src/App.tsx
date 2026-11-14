@@ -6,6 +6,7 @@ import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation, useS
 import { Dropdown } from "./components/controls";
 import { DialogHost } from "./components/dialogs";
 import { Icon, type IconName } from "./components/icons";
+import { QuickSetup, useFirstConnectSetup } from "./components/QuickSetup";
 import { Stage } from "./components/Stage";
 import { inputPress, inputWheel } from "./components/useMouseInput";
 import { f, t, tc, tn, useLanguage } from "./i18n/i18n";
@@ -79,6 +80,7 @@ function Layout() {
   const { code } = useLanguage(); // rebuild everything when the language changes, like set_language()
   const { pathname } = useLocation();
   useShotParams();
+  useFirstConnectSetup();
   const connected = status === "connected";
   return (
     <div className={`app ${connected && dirty ? "has-savebar" : ""}`} key={code}>
@@ -92,6 +94,7 @@ function Layout() {
             </main>
           </div>
           <SaveBar />
+          <QuickSetup />
         </>
       ) : (
         <ConnectScreen />
