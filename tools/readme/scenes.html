@@ -159,7 +159,7 @@ function bubble(cx, cy, size, name, color = ACCENT) {
 /** A callout line from a point on the mouse to a bubble at (bx, by), popping in over `pop` 0..1. */
 function callout(zx, zy, bx, by, size, name, pop, color = ACCENT) {
   if (pop <= 0) return;
-  const e = ease(pop), sz = size * e, ex = bx + (zx < bx ? -1 : 1) * sz / 2;
+  const e = ease(Math.min(1, pop)), sz = size * e, ex = bx + (zx < bx ? -1 : 1) * sz / 2;
   g.strokeStyle = color;
   g.lineWidth = 2;
   g.beginPath();
@@ -464,7 +464,7 @@ const SCENES = {
         ripples: now ? [[t - now[2], ACCENT]] : [],
       });
       for (const [zone, name, s] of steps) {
-        const age = t - s, fade = 1 - seg(age, 0.95, 1.2);
+        const age = t - s, fade = 1 - seg(age, 0.7, 0.9);
         if (age < 0 || fade <= 0) continue;
         const z = pics.side.zones[zone], k = h / pics.side.h;
         const zy = y + z.cy * k;
