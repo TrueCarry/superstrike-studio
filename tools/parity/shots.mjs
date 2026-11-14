@@ -30,6 +30,16 @@ const SHOTS = {
   "lang-ur": { route: "&lang=ur#/click" },
   narrow: { route: "#/click", size: NARROW },
   "reduced-motion": { route: "#/aim", motion: "reduce" },
+  "setup-speed": { route: "#/profiles", run: `(async () => {
+    document.querySelector('.panel-head .suggested').click(); await new Promise((r) => setTimeout(r, 200));
+    document.querySelector('.setup-choice').click(); await new Promise((r) => setTimeout(r, 100)); document.querySelector('.setup footer .suggested').click(); await new Promise((r) => setTimeout(r, 200));
+    document.querySelectorAll('.setup [role=radio]')[2].click();
+  })()` },
+  "setup-save": { route: "#/profiles", run: `(async () => {
+    document.querySelector('.panel-head .suggested').click(); await new Promise((r) => setTimeout(r, 200));
+    document.querySelector('.setup-choice').click(); await new Promise((r) => setTimeout(r, 100)); document.querySelector('.setup footer .suggested').click(); await new Promise((r) => setTimeout(r, 200));
+    document.querySelectorAll('.setup [role=radio]')[2].click(); await new Promise((r) => setTimeout(r, 100)); document.querySelector('.setup footer .suggested').click();
+  })()` },
   // the newer scenes at a few moments of their loop, side by side
   scenes: { route: "#/click", size: [1600, 1100], run: `(async () => {
     const { SCENES } = await import("/src/illustrations/index.ts");
@@ -57,6 +67,7 @@ async function shot(page, name) {
   const [width, height] = sizeOf(name), s = SHOTS[name];
   await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
   await page.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: s.motion ?? "" }] });
+  await page.send("Page.navigate", { url: "about:blank" }); // a fresh load even when only the hash differs
   await page.send("Page.navigate", { url: url(name) });
   await new Promise((r) => setTimeout(r, 2500));
   if (s.run) (await page.evaluate(s.run), await new Promise((r) => setTimeout(r, 800)));

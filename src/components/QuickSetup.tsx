@@ -2,6 +2,7 @@
 // the same store actions as the panels, so everything can be refined afterwards.
 import { useEffect, useState } from "react";
 import { f, t } from "../i18n/i18n";
+import { Icon } from "./icons";
 import { Illustration } from "../illustrations/Illustration";
 import { BUILTIN_PRESETS, hitsCodeDecode } from "../model/profile";
 import { commit } from "../state/hits";
@@ -68,59 +69,68 @@ export function QuickSetup() {
     if (!getState().dirty.length) close();
   };
   const STEPS = [t("Click feel"), t("Speed"), t("Save")];
+  const chosen = feelHits(feel ?? "Balanced")?.[0];
 
   return (
     <div className="setup-backdrop" onClick={(e) => e.target === e.currentTarget && close()}>
       <div className="setup" role="dialog" aria-modal="true" aria-label={t("Quick setup")}>
         <header>
           <h2>{t("Quick setup")}</h2>
-          <ol className="setup-steps">
-            {STEPS.map((s, i) => <li key={s} className={i === step ? "on" : i < step ? "done" : ""}>{s}</li>)}
-          </ol>
+          <span className="spacer" />
+          <span className="setup-step">{f(t("Step %d of %d · %s"), step + 1, STEPS.length, STEPS[step])}</span>
           <button className="flat" onClick={close}>{t("Skip")}</button>
         </header>
+        <div className="setup-progress" role="progressbar" aria-valuemin={1} aria-valuemax={STEPS.length} aria-valuenow={step + 1} aria-label={t("Quick setup")}>
+          {STEPS.map((s, i) => <span key={s} className={i <= step ? "on" : ""} />)}
+        </div>
 
-        {step === 0 && (
-          <>
-            <p className="lead">{t("How should a click feel? Pick the one you like.")}</p>
-            <div className="setup-choices">
-              {FEELS.map((c) => {
-                const h = feelHits(c.preset)![0];
-                return (
-                  <button key={c.preset} className={`setup-choice ${feel === c.preset ? "on" : ""}`} aria-pressed={feel === c.preset} onClick={() => pickFeel(c.preset)}>
-                    <Illustration scene="feel" value={{ act: h.act, rt: h.rtOn ? h.rt : 0, hap: h.hap }} label={t(c.title)} />
-                    <b>{t(c.title)}</b>
-                    <span className="ss-hint">{t(c.hint)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </>
-        )}
-
-        {step === 1 && (
-          <>
-            <p className="lead">{t("How far should the cursor go for the same hand move?")}</p>
-            <div className="setup-speed">
-              <Illustration scene="dpi" value={{ ratio: (speed ?? 800) / 3200 }} label={t("Speed")} />
-              <div className="segments" role="radiogroup" aria-label={t("Speed")}>
-                {SPEEDS.map((d) => (
-                  <button key={d} role="radio" aria-checked={speed === d} className={speed === d ? "on" : ""} onClick={() => pickSpeed(d)}>
-                    {d} DPI
-                  </button>
-                ))}
+        <div className="setup-page" key={step}>
+          {step === 0 && (
+            <>
+              <p className="lead">{t("How should a click feel? Pick the one you like.")}</p>
+              <div className="setup-choices">
+                {FEELS.map((c) => {
+                  const h = feelHits(c.preset)![0];
+                  return (
+                    <button key={c.preset} className={`setup-choice ${feel === c.preset ? "on" : ""}`} aria-pressed={feel === c.preset} onClick={() => pickFeel(c.preset)}>
+                      <Illustration scene="feel" value={{ act: h.act, rt: h.rtOn ? h.rt : 0, hap: h.hap }} label={t(c.title)} />
+                      <b>{t(c.title)}</b>
+                      <span className="ss-hint">{t(c.hint)}</span>
+                    </button>
+                  );
+                })}
               </div>
-              <span className="ss-hint">{t("Low DPI for precise aim in shooters, high DPI for big screens and the desktop.")}</span>
-            </div>
-          </>
-        )}
+            </>
+          )}
 
-        {step === 2 && (
-          <div className="setup-save">
-            <Illustration scene="hero" value={{}} label={t("Save to mouse")} />
-            <p className="lead">{f(t("%s at %d DPI. Save it into the mouse, and it works on any computer without this app."), t(FEELS.find((c) => c.preset === feel)?.title ?? "Balanced"), speed ?? 800)}</p>
-          </div>
-        )}
+          {step === 1 && (
+            <>
+              <p className="lead">{t("How far should the cursor go for the same hand move?")}</p>
+              <div className="setup-speed">
+                <Illustration scene="speed" value={{ dpi: speed ?? 800, marks: SPEEDS }} label={t("Speed")} />
+                <div className="segments big" role="radiogroup" aria-label={t("Speed")}>
+                  {SPEEDS.map((d) => (
+                    <button key={d} role="radio" aria-checked={speed === d} className={speed === d ? "on" : ""} onClick={() => pickSpeed(d)}>
+                      {d} DPI
+                    </button>
+                  ))}
+                </div>
+                <span className="ss-hint">{t("Low DPI for precise aim in shooters, high DPI for big screens and the desktop.")}</span>
+              </div>
+            </>
+          )}
+
+          {step === 2 && (
+            <div className="setup-save">
+              <Illustration scene="save" value={{ act: chosen?.act ?? 5, dpi: speed ?? 800, hap: chosen?.hap ?? 0 }} label={t("Save to mouse")} />
+              <div className="setup-summary">
+                <span className="ss-chip"><Icon name="hits" />{t(FEELS.find((c) => c.preset === feel)?.title ?? "Balanced")}</span>
+                <span className="ss-chip"><Icon name="sensor" />{speed ?? 800} DPI</span>
+              </div>
+              <p className="lead">{t("Save it into the mouse, and it works on any computer without this app.")}</p>
+            </div>
+          )}
+        </div>
 
         <footer>
           {step > 0 && <button className="pill" onClick={() => setStep(step - 1)}>{t("Back")}</button>}

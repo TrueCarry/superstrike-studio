@@ -10,12 +10,13 @@ import { power } from "./power";
 import { profiles } from "./profiles";
 import { rapid } from "./rapid";
 import { remap } from "./remap";
+import { save } from "./save";
 import { scroll } from "./scroll";
 import { snap } from "./snap";
 import { speed } from "./speed";
 import { surface } from "./surface";
 
-export const SCENES = { hero, actuation, rapid, haptics, polling, dpi, remap, profiles, snap, lod, feel, speed, surface, scroll, power };
+export const SCENES = { hero, actuation, rapid, haptics, polling, dpi, remap, profiles, snap, lod, feel, speed, surface, scroll, power, save };
 export type SceneName = keyof typeof SCENES;
 export type SceneValue<N extends SceneName> = Parameters<(typeof SCENES)[N]["draw"]>[2];
 
@@ -25,6 +26,7 @@ export const README: { [N in Exclude<SceneName, "feel">]: SceneValue<N> } = {
   surface: { mode: 1 },
   scroll: { ms: 100 },
   power: { low: 60, sleep: 300 },
+  save: { act: 3, dpi: 1600, hap: 2 },
   hero: {},
   actuation: { act: [2, 9] },
   rapid: { rt: [0, 2] },
