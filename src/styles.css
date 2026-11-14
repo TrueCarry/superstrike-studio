@@ -127,6 +127,7 @@ button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: i
 .savebar .ico { width: 22px; height: 22px; color: var(--accent-fg); }
 .savebar .text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
 .savebar .heading { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.savebar button { flex: none; white-space: nowrap; }
 .savebar button.pill { font-weight: 800; }
 
 /* ---------------------------------------------------------------- tokens */
@@ -275,33 +276,40 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .stage-chips .on .top { opacity: 1; }
 .stage-chips .dim .dpi { opacity: .55; }
 
-/* ---------------------------------------------------------------- Profiles */
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(max(280px, calc((100% - 32px) / 3 + 1px)), 1fr)); gap: 16px; }
-.card .ss-value { line-height: 1; }
-.card .name:disabled { opacity: .5; }
-.card .top { display: flex; align-items: center; gap: 8px; min-height: 36px; }
-.card .name { background: none; border: 0; padding: 4px 6px; margin: -4px -6px; border-radius: 6px; font-size: 14px; width: calc(100% + 12px); }
-.card .name:hover { background: rgb(255 255 255 / 5%); }
-.card .name:focus { background: rgb(0 0 0 / 25%); outline: 2px solid rgb(59 156 255 / 60%); }
-.card .name::placeholder { color: var(--text); opacity: 1; }
-.card .line { display: flex; align-items: center; gap: 8px; }
-.card .summary { display: flex; gap: 14px; flex-wrap: wrap; font-weight: 800; font-variant-numeric: tabular-nums; }
-.card .summary span { display: inline-flex; align-items: center; gap: 5px; }
-.card .summary .ico { color: var(--accent); }
-.card .summary .rt .ico { color: var(--orange); }
-.panel .cards { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+/* ---------------------------------------------------------------- Profiles: one row per slot, the same parts in the same places */
+.profile-list, .feel-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; background: var(--row); border-radius: 12px; overflow: hidden; }
+.profile-list > li + li, .feel-list > li + li { border-top: 1px solid var(--sep); }
+.profile-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; grid-template-areas: "num who acts" "num sum acts"; align-items: center; gap: 2px 12px; padding: 10px 10px 10px 12px; }
+.profile-row.editing { background: rgb(59 156 255 / 10%); box-shadow: inset 3px 0 var(--accent); }
+.profile-row .num { grid-area: num; font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: center; opacity: .9; }
+.profile-row .who { grid-area: who; display: flex; align-items: center; gap: 8px; min-width: 0; flex-wrap: wrap; }
+.profile-row .name { flex: 1 1 120px; min-width: 0; background: none; border: 0; padding: 3px 6px; margin: -3px -6px; border-radius: 6px; font-weight: 700; }
+.profile-row .name:hover { background: rgb(255 255 255 / 5%); }
+.profile-row .name:focus { background: rgb(0 0 0 / 25%); outline: 2px solid rgb(59 156 255 / 60%); }
+.profile-row .name:disabled { opacity: .5; }
+.profile-row .badges { display: flex; align-items: center; gap: 6px; }
+.profile-row .cycle { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; opacity: .85; cursor: pointer; }
+.profile-row .cycle .switch { transform: scale(.8); margin: -3px -4px; }
+.profile-row .summary { grid-area: sum; display: flex; gap: 14px; font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; }
+.profile-row .summary span { display: inline-flex; align-items: center; gap: 5px; min-width: 38px; }
+.profile-row .summary .ico { color: var(--accent); }
+.profile-row .summary .rt .ico { color: var(--orange); }
+.profile-row .summary .rt.off { opacity: .45; }
+.profile-row .acts, .feel-row .acts { grid-area: acts; display: flex; align-items: center; gap: 6px; }
+.profile-row .acts > button { min-width: 78px; }
 
-/* feel library */
-.feel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.feel-card { background: var(--scene); border: 1px solid var(--line); border-radius: 14px; padding: 6px 10px 10px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); min-width: 0; }
-.feel-card:hover { border-color: rgb(59 156 255 / 60%); }
-.feel-card:active { transform: scale(.98); }
-.feel-card:focus-visible { outline: 2px solid rgb(59 156 255 / 60%); outline-offset: 1px; }
-.feel-card .illustration { width: 100%; }
-.feel-name { display: flex; align-items: center; gap: 4px; font-weight: 800; min-height: 34px; }
-.feel-name span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.feel-card .ss-hint { font-size: 11.5px; white-space: pre-wrap; }
-.card .foot { display: flex; align-items: center; gap: 8px; }
+/* feel library: a thumbnail playing the feel, name and summary, Apply */
+.feel-row { display: flex; align-items: center; gap: 12px; padding: 6px 10px 6px 6px; }
+.feel-row .illustration { width: 64px; height: 81px; flex: none; border-radius: 10px; }
+.feel-row .who { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.feel-row .who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feel-row .ss-hint { font-size: 12px; white-space: pre-wrap; }
+
+/* Device */
+.device-lines { display: flex; flex-direction: column; gap: 2px; }
+.button-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.lang-picker { gap: 8px; }
+.lang-picker > .ico:first-child { position: static; width: 16px; height: 16px; opacity: .8; }
 
 /* ---------------------------------------------------------------- quick setup */
 .setup-backdrop { position: fixed; inset: 0; background: rgb(0 0 0 / 60%); display: grid; place-items: center; z-index: 55; animation: fade 160ms ease-out; padding: 16px; }
@@ -326,22 +334,17 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .setup-speed .segments { width: min(480px, 100%); }
 .setup footer { display: flex; gap: 12px; }
 
-/* ---------------------------------------------------------------- Device */
-.device-hero { display: flex; align-items: center; gap: 16px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
-.device-hero img { width: 56px; height: 56px; }
-.device-hero h3 { margin: 0 0 2px; font-size: 18px; font-weight: 800; }
+/* ---------------------------------------------------------------- colour inputs, traffic log */
 .color-button { width: 44px; height: 30px; padding: 3px; border: 0; border-radius: 8px; background: var(--button); cursor: pointer; }
 .color-button::-webkit-color-swatch-wrapper { padding: 0; }
 .color-button::-webkit-color-swatch { border: 0; border-radius: 5px; }
 .log { font: 12px/1.35 ui-monospace, monospace; color: #9c9; max-height: 320px; overflow: auto; margin: 0; padding: 12px; white-space: pre-wrap; }
 
 /* ---------------------------------------------------------------- setting cards: the animation on top, the control under it */
-.fx-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 .fx-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
-.fx-card.wide { grid-column: 1 / -1; }
 .fx-art { background: var(--scene); display: flex; justify-content: center; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .fx-art .illustration { height: 190px; }
-.fx-card.wide .fx-art .illustration, .fx-art.tall .illustration { height: 240px; }
+.fx-art.tall .illustration { height: 240px; }
 .fx-body { padding: 16px 18px 18px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
 .fx-head { display: flex; align-items: center; gap: 10px; min-height: 30px; }
 .fx-head h3 { margin: 0; font-size: 16px; font-weight: 800; }
@@ -361,14 +364,6 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .steps input[type="range"] { width: 100%; accent-color: var(--accent); margin: 0; height: 26px; cursor: pointer; }
 .steps .ends { display: flex; justify-content: space-between; font-size: 12px; opacity: .65; }
 .fx-card.rapid .steps input[type="range"] { accent-color: var(--orange); }
-
-/* fold for the less used settings */
-details.fold { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
-details.fold > summary { cursor: pointer; list-style: none; padding: 16px 18px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
-details.fold > summary::-webkit-details-marker { display: none; }
-details.fold > summary .ico { transition: transform var(--fast) var(--ease); margin-inline-start: auto; }
-details.fold[open] > summary .ico { transform: rotate(180deg); }
-details.fold > .fold-body { padding: 0 18px 18px; display: flex; flex-direction: column; gap: 12px; }
 
 /* ---------------------------------------------------------------- small windows */
 @media (max-width: 1500px) {

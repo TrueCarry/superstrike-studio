@@ -189,14 +189,12 @@ function SaveBar() {
   if (n) last.current = n;
   return (
     <div className={`savebar-wrap ${n ? "open" : ""}`} aria-hidden={!n}>
-      <div>
-        <div className="savebar">
+      <div className="savebar-inner">
+        <div className="savebar" title={t("Only a preview until you save it into the mouse (Ctrl+S).")}>
           <Icon name="save" size={22} />
           <div className="text">
             <span className="heading">{f(tn("%d unsaved change", "%d unsaved changes", last.current), last.current)}</span>
-            <span className="ss-hint">{t("Only a preview until you save it into the mouse (Ctrl+S).")}</span>
           </div>
-          <span className="spacer" />
           <button className="flat" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void discard()}>{t("Discard")}</button>
           <button className="suggested pill" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void save()} title={t("Write the changes into the mouse memory (Ctrl+S)")}>
             {t("Save to mouse")}{blank ? "…" : ""}

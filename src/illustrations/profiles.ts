@@ -4,8 +4,11 @@ import { scene } from "./scene";
 /** [click point 1..10, speed 0..1, haptics 0..5] per profile */
 const DEMO: [number, number, number][] = [[3, 0.3, 3], [8, 0.85, 1], [5, 0.55, 5], [1, 1, 0], [7, 0.4, 2]];
 
-/** One press of the thumb button and click point, speed and click strength switch together. */
-export const profiles = scene<{ values?: [number, number, number][] }>({
+/**
+ * One press of the profile button and click point, speed and click strength switch together. `values`
+ * are the profiles in the cycle, `names` their names (shown under the dots).
+ */
+export const profiles = scene<{ values?: [number, number, number][]; names?: string[] }>({
   duration: 4,
   still: 0.6,
   size: () => [480, 360],
@@ -38,8 +41,18 @@ export const profiles = scene<{ values?: [number, number, number][] }>({
     for (let i = 0; i < n; i++) {
       const on = i === k, pop = on ? Math.sin(seg(u, 0, 0.3) * Math.PI) : 0;
       g.fillStyle = on ? ACCENT : "rgba(255,255,255,0.14)";
-      dot(g, bx + (n > 1 ? (i * bw) / (n - 1) : bw / 2), 318, 8 * (1 + 0.4 * pop));
+      dot(g, bx + (n > 1 ? (i * bw) / (n - 1) : bw / 2), 310, 8 * (1 + 0.4 * pop));
       g.fill();
+    }
+    const name = v.values?.length ? v.names?.[k] : undefined;
+    if (name) {
+      g.font = "700 14px system-ui, sans-serif";
+      g.textAlign = "center";
+      g.fillStyle = "rgba(255,255,255,0.9)";
+      g.globalAlpha = clamp(u / 0.25);
+      g.fillText(name.length > 24 ? name.slice(0, 23) + "…" : name, bx + bw / 2, 342);
+      g.globalAlpha = 1;
+      g.textAlign = "start";
     }
   },
 });
