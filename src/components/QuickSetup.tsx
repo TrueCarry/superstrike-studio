@@ -6,7 +6,7 @@ import { Icon } from "./icons";
 import { Illustration } from "../illustrations/Illustration";
 import { BUILTIN_PRESETS, hitsCodeDecode } from "../model/profile";
 import { commit } from "../state/hits";
-import { currentProfile, getState, save, updateProfile, useStore } from "../state/store";
+import { currentProfile, discard, getState, save, updateProfile, useStore } from "../state/store";
 import { setStudio, useStudio } from "../state/studio";
 
 const DONE_KEY = "superstrike.setup";
@@ -22,14 +22,17 @@ const feelHits = (name: string) => {
   return typeof v === "string" ? null : v;
 };
 
-/** Opens quick setup once, the first time a mouse connects in this browser. */
+/**
+ * Opens quick setup once for a stock mouse: one whose onboard memory was never written (factory state).
+ * A mouse that already has saved profiles is never offered it on its own, so its settings are not touched.
+ */
 export function useFirstConnectSetup() {
-  const ready = useStore((s) => s.status === "connected" && s.edit >= 0);
+  const stock = useStore((s) => s.status === "connected" && s.edit >= 0 && s.blank);
   useEffect(() => {
-    if (!ready || localStorage.getItem(DONE_KEY) || new URLSearchParams(location.search).has("shot")) return;
+    if (!stock || localStorage.getItem(DONE_KEY) || new URLSearchParams(location.search).has("shot")) return;
     localStorage.setItem(DONE_KEY, "1");
     setStudio({ setup: true });
-  }, [ready]);
+  }, [stock]);
 }
 
 export function QuickSetup() {
@@ -40,15 +43,26 @@ export function QuickSetup() {
   const [feel, setFeel] = useState<string | null>(null);
   const [speed, setSpeed] = useState<number | null>(null);
   const box = useRef<HTMLDivElement>(null);
+  const touched = useRef(false); // quick setup changed something (a click feel also goes to the mouse at once)
+  const saved = useRef(false);
+  /** Closing without saving takes back what quick setup changed, on screen and in the mouse. */
+  const close = () => {
+    setStudio({ setup: false });
+    if (touched.current && !saved.current) void discard();
+  };
+  const closeRef = useRef(close);
+  closeRef.current = close;
   useEffect(() => {
     if (!open) return;
     setStep(0);
     setFeel(null);
     setSpeed(null);
+    touched.current = false;
+    saved.current = false;
     const back = document.activeElement as HTMLElement | null;
     // Escape closes; Tab stays inside the dialog
     const keys = (e: KeyboardEvent) => {
-      if (e.key === "Escape") return setStudio({ setup: false });
+      if (e.key === "Escape") return closeRef.current();
       if (e.key !== "Tab" || !box.current) return;
       const all = [...box.current.querySelectorAll<HTMLElement>("button:not(:disabled)")];
       const i = all.indexOf(document.activeElement as HTMLElement);
@@ -68,10 +82,10 @@ export function QuickSetup() {
   }, [open, step]);
   if (!open || !profile) return null;
 
-  const close = () => setStudio({ setup: false });
   const pickFeel = (name: string) => {
     const v = feelHits(name);
     if (v) commit(v);
+    touched.current = true;
     setFeel(name);
   };
   const pickSpeed = (dpi: number) => {
@@ -80,11 +94,14 @@ export function QuickSetup() {
       const i = p.stages[p.defaultStage]?.x ? p.defaultStage : 0;
       p.stages[i] = { ...p.stages[i], x: v, y: v, lod: p.stages[i].lod || 2 };
     });
+    touched.current = true;
     setSpeed(dpi);
   };
   const finish = async () => {
     await save();
-    if (!getState().dirty.length) close();
+    if (getState().dirty.length) return; // cancelled or failed: stay open
+    saved.current = true;
+    close();
   };
   const STEPS = [t("Click feel"), t("Speed"), t("Save")];
   const chosen = feelHits(feel ?? "Balanced")?.[0];

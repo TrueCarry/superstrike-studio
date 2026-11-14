@@ -77,14 +77,13 @@ export function profileLabel(s: State, sector: number) {
 
 function Layout() {
   const status = useStore((s) => s.status);
-  const dirty = useStore((s) => s.dirty.length);
   const { code } = useLanguage(); // rebuild everything when the language changes, like set_language()
   const { pathname } = useLocation();
   useShotParams();
   useFirstConnectSetup();
   const connected = status === "connected";
   return (
-    <div className={`app ${connected && dirty ? "has-savebar" : ""}`} key={code}>
+    <div className="app" key={code}>
       {connected ? (
         <>
           <TopBar />
@@ -95,7 +94,6 @@ function Layout() {
                 <Outlet />
               </div>
             </main>
-            <SaveBar />
           </div>
           <QuickSetup />
         </>
@@ -148,6 +146,7 @@ function DeviceChip() {
 
 function TopBar() {
   const dirty = useStore((s) => s.dirty.length);
+  const blank = useStore((s) => s.blank);
   return (
     <header className="topbar">
       <DeviceChip />
@@ -161,10 +160,14 @@ function TopBar() {
       </nav>
       <EditedProfile />
       <span className="spacer" />
-      <button className="suggested pill save" disabled={!dirty} onClick={() => void save()} title={t("Write the changes into the mouse memory (Ctrl+S)")}>
+      {/* Save and Discard always sit here, enabled only with unsaved changes, so nothing moves when a change is made */}
+      <button className="flat discard" disabled={!dirty} onClick={() => void discard()} title={t("Discard")}>
+        <span>{t("Discard")}</span>
+      </button>
+      <button className="suggested pill save" disabled={!dirty} onClick={() => void save()} title={`${t("Write the changes into the mouse memory (Ctrl+S)")}\n${t("Only a preview until you save it into the mouse (Ctrl+S).")}`}>
         <Icon name="save" />
-        <span>{t("Save to mouse")}</span>
-        {dirty > 0 && <b className="count">{dirty}</b>}
+        <span>{t("Save to mouse")}{blank ? "…" : ""}</span>
+        <b className="count" aria-label={f(tn("%d unsaved change", "%d unsaved changes", dirty), dirty)}>{dirty}</b>
       </button>
     </header>
   );
@@ -179,30 +182,6 @@ function EditedProfile() {
   });
   if (s.blank) return <span className="ss-badge" title={t("The profile you are editing")}>{t("Factory profile")}</span>;
   return <Dropdown className="profile-switch" value={s.edit} options={options} onChange={setEdit} tooltip={t("The profile you are editing")} />;
-}
-
-function SaveBar() {
-  const n = useStore((s) => (s.status === "connected" ? s.dirty.length : 0));
-  const blank = useStore((s) => s.blank);
-  // keeps the last count while sliding away
-  const last = useRef(n);
-  if (n) last.current = n;
-  return (
-    <div className={`savebar-wrap ${n ? "open" : ""}`} aria-hidden={!n}>
-      <div className="savebar-inner">
-        <div className="savebar" title={t("Only a preview until you save it into the mouse (Ctrl+S).")}>
-          <Icon name="save" size={22} />
-          <div className="text">
-            <span className="heading">{f(tn("%d unsaved change", "%d unsaved changes", last.current), last.current)}</span>
-          </div>
-          <button className="flat" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void discard()}>{t("Discard")}</button>
-          <button className="suggested pill" disabled={!n} tabIndex={n ? 0 : -1} onClick={() => void save()} title={t("Write the changes into the mouse memory (Ctrl+S)")}>
-            {t("Save to mouse")}{blank ? "…" : ""}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 interface PolicyApi {
