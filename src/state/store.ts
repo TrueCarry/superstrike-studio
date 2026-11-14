@@ -352,7 +352,7 @@ export async function discard() {
   refreshDirty();
   liveSensor();
   const after = profiles[state.active];
-  if (before && after && !state.blank) {
+  if (before && after) {
     const changed = [0, 1].filter((b) => JSON.stringify(before.hits[b]) !== JSON.stringify(after.hits[b]));
     if (changed.length) await run(async (d) => { for (const b of changed) await d.hitsSet(b, after.hits[b]); });
   }

@@ -96,7 +96,8 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .tabs a:hover { color: var(--text); background: rgb(255 255 255 / 5%); }
 .tabs a.on { background: var(--accent); color: #fff; }
 .tabs a:focus-visible { outline: 2px solid rgb(59 156 255 / 60%); outline-offset: 1px; }
-.profile-switch > button { min-width: 180px; max-width: 260px; }
+/* one width whatever the label, so the unsaved mark never pushes Save onto a second row */
+.profile-switch > button { width: 240px; max-width: 260px; }
 .topbar button.save { display: inline-flex; align-items: center; gap: 8px; }
 
 /* studio: the mouse in the middle, the settings panel next to it */
@@ -113,7 +114,7 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .test-stats b { font-size: 20px; font-weight: 800; line-height: 1.1; }
 .test-stats span { font-size: 11.5px; opacity: .7; }
 .test-stats .cps b { font-size: 40px; color: var(--accent-fg); }
-.panel { min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 20px 20px 120px; display: flex; flex-direction: column; gap: 16px; border-inline-start: 1px solid var(--line); }
+.panel { min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 20px; display: flex; flex-direction: column; gap: 16px; border-inline-start: 1px solid var(--line); }
 .panel-body { display: contents; }
 .panel-body > * { flex: none; min-width: 0; animation: fade 180ms var(--ease); }
 .panel-head { display: flex; align-items: center; gap: 10px; min-height: 40px; }
@@ -136,17 +137,9 @@ button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: i
 .connect-help pre { white-space: pre-wrap; background: rgb(0 0 0 / 30%); padding: 10px; border-radius: 8px; font-size: 12px; margin: 0; }
 .connect-lang .lang-picker { background: rgb(0 0 0 / 22%); border-radius: 999px; padding: 4px 6px 4px 12px; }
 
-/* save bar: floats over the bottom of the panel while there are unsaved changes and never takes layout
-   room; the panel keeps that much padding at its end, so nothing is covered */
-.savebar-wrap { position: absolute; inset-inline-end: 0; bottom: 0; width: var(--panel-w); padding: 0 20px 16px; pointer-events: none; z-index: 20;
-  opacity: 0; transform: translateY(12px); transition: opacity 180ms var(--ease), transform 220ms var(--ease); }
-.savebar-wrap.open { opacity: 1; transform: none; pointer-events: auto; }
-.savebar { display: flex; align-items: center; gap: 14px; padding: 12px 14px 12px 18px; background: #263a51; border: 1px solid rgb(59 156 255 / 55%); border-radius: var(--radius); box-shadow: 0 10px 30px rgb(0 0 0 / 45%); }
-.savebar .ico { width: 22px; height: 22px; color: var(--accent-fg); }
-.savebar .text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-.savebar .heading { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.savebar button { flex: none; white-space: nowrap; }
-.savebar button.pill { font-weight: 800; }
+/* Save and Discard live in the top bar: always in the same place, enabled only with unsaved changes */
+.topbar button.discard { flex: none; }
+.topbar button.save:disabled .count { visibility: hidden; }
 
 /* ---------------------------------------------------------------- tokens */
 .ss-panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
@@ -405,13 +398,9 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
   .studio { display: block; overflow-y: auto; }
   .stage-mouse { padding: 12px; }
   .stage-mouse .mouseview { min-height: 380px; flex: none; }
-  .panel { overflow: visible; border-inline-start: 0; border-top: 1px solid var(--line); padding: 16px 16px 120px; }
-  .savebar-wrap { position: fixed; width: auto; inset-inline-start: 0; padding: 0 12px 12px; }
+  .panel { overflow: visible; border-inline-start: 0; border-top: 1px solid var(--line); padding: 16px; }
   .profile-switch > button { min-width: 0; max-width: 200px; }
   .topbar button.save span { display: none; }
-  .savebar { padding: 10px 14px; gap: 10px; }
-  .savebar .ss-hint { display: none; }
-  .savebar button { white-space: nowrap; }
   .topbar button.save { padding: 0 14px; }
   .topbar { gap: 8px; padding: 8px 10px; }
 }
