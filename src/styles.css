@@ -79,18 +79,19 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .topbar button.save { display: inline-flex; align-items: center; gap: 8px; }
 
 /* studio: the mouse in the middle, the settings panel next to it */
-.studio { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(320px, 1fr) minmax(420px, 640px); }
+/* the panel has one width on every tab, and its scrollbar always has room, so nothing moves between tabs */
+.studio { --panel-w: clamp(440px, 36vw, 600px); flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) var(--panel-w); position: relative; }
 .stage-mouse { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 8px 16px 16px; background: radial-gradient(circle at 50% 45%, rgb(59 156 255 / 7%), transparent 60%); }
 .stage-mouse .mouseview { flex: 1; }
-.panel { min-width: 0; min-height: 0; overflow-y: auto; padding: 20px 20px 32px; display: flex; flex-direction: column; gap: 16px; border-inline-start: 1px solid var(--line); animation: slide 220ms var(--ease); }
-.panel > * { flex: none; }
-.panel-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.stage-foot { flex: none; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 12px; }
+.panel { min-width: 0; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; padding: 20px 20px 120px; display: flex; flex-direction: column; gap: 16px; border-inline-start: 1px solid var(--line); }
+.panel-body { display: contents; }
+.panel-body > * { flex: none; min-width: 0; animation: fade 180ms var(--ease); }
+.panel-head { display: flex; align-items: center; gap: 10px; min-height: 40px; }
 .panel-head h2 { margin: 0; font-size: 22px; font-weight: 800; }
 .panel-head .spacer { min-width: 8px; }
-
-/* pages still laid out as a column (Device, backup) */
-.scroll { flex: 1; overflow-y: auto; min-height: 0; }
-.column { max-width: 980px; margin: 0 auto; padding: 24px 24px 32px; display: flex; flex-direction: column; gap: 16px; }
+.panel-head .segments { flex: none; }
+.more-head { margin: 8px 2px -4px; }
 
 /* connect screen */
 .connect-screen { flex: 1; overflow-y: auto; display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 32px 24px 48px; text-align: center; position: relative; }
@@ -106,11 +107,12 @@ button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: i
 .connect-screen pre { white-space: pre-wrap; background: rgb(0 0 0 / 30%); padding: 10px; border-radius: 8px; font-size: 12px; }
 .connect-screen summary { cursor: pointer; }
 
-/* bottom save bar (slides up while there are unsaved changes) */
-.savebar-wrap { flex: none; display: grid; grid-template-rows: 0fr; transition: grid-template-rows 260ms ease-out; }
-.savebar-wrap.open { grid-template-rows: 1fr; }
-.savebar-wrap > div { overflow: hidden; }
-.savebar { display: flex; align-items: center; gap: 16px; padding: 12px 24px; background: #263a51; border-top: 2px solid var(--accent); }
+/* save bar: floats over the bottom of the panel while there are unsaved changes and never takes layout
+   room; the panel keeps that much padding at its end, so nothing is covered */
+.savebar-wrap { position: absolute; inset-inline-end: 0; bottom: 0; width: var(--panel-w); padding: 0 20px 16px; pointer-events: none; z-index: 20;
+  opacity: 0; transform: translateY(12px); transition: opacity 180ms var(--ease), transform 220ms var(--ease); }
+.savebar-wrap.open { opacity: 1; transform: none; pointer-events: auto; }
+.savebar { display: flex; align-items: center; gap: 14px; padding: 12px 14px 12px 18px; background: #263a51; border: 1px solid rgb(59 156 255 / 55%); border-radius: var(--radius); box-shadow: 0 10px 30px rgb(0 0 0 / 45%); }
 .savebar .ico { width: 22px; height: 22px; color: var(--accent-fg); }
 .savebar .text { display: flex; flex-direction: column; gap: 2px; }
 .savebar .heading { font-weight: 800; }
@@ -132,13 +134,6 @@ button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: i
 .ss-star { font-size: 10px; color: var(--warn); }
 .ss-inuse { font-size: 9px; font-weight: 800; letter-spacing: .08em; color: var(--ok); }
 .ss-chip.on .ss-inuse { color: #fff; }
-.ss-pad { border: 2px dashed rgb(59 156 255 / 45%); border-radius: 14px; background: rgb(59 156 255 / 7%); min-height: 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; user-select: none; transition: background-color 180ms ease-out; flex: none; }
-.ss-pad.pressed { background: rgb(59 156 255 / 25%); }
-.ss-pad .ss-hint { font-variant-numeric: tabular-nums; }
-.ss-pad { min-height: 140px; border-radius: var(--radius); }
-.ss-pad .cps { font-size: 14px; opacity: .8; }
-.ss-pad .cps b { font-size: 40px; font-weight: 800; color: var(--accent-fg); font-variant-numeric: tabular-nums; opacity: 1; }
-
 /* ---------------------------------------------------------------- boxed lists */
 .boxed { background: var(--row); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 0 1px rgb(0 0 0 / 3%), 0 1px 3px rgb(0 0 0 / 7%); flex: none; }
 .boxed > * + * { border-top: 1px solid var(--sep); }
@@ -200,12 +195,6 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .boxed .toggles { background: #505052; }
 .boxed .toggles button.on { background: #737375; }
 
-/* inline view switcher (HITS tabs) */
-.switcher { display: flex; background: var(--raised); border-radius: 9px; padding: 3px; }
-.switcher button { flex: 1 1 0; background: none; min-height: 30px; padding: 0 6px; border-radius: 6px; font-weight: 700; font-size: 13px; }
-.switcher button:hover:not(:disabled) { background: rgb(255 255 255 / 6%); }
-.switcher button.on, .switcher button.on:hover:not(:disabled) { background: #5c5c5f; }
-
 /* ---------------------------------------------------------------- popover, dialogs, toasts */
 .popover-anchor { position: relative; display: inline-flex; }
 .popover { position: absolute; top: calc(100% + 6px); right: -6px; z-index: 40; min-width: 190px; background: #38383b; border-radius: 12px; padding: 4px; box-shadow: 0 2px 6px rgb(0 0 0 / 30%), 0 8px 24px rgb(0 0 0 / 40%); display: flex; flex-direction: column; animation: pop 120ms ease-out; }
@@ -244,7 +233,6 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .dialog.about img { width: 128px; height: 128px; margin: 0 auto 8px; }
 
 .toasts { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; z-index: 60; pointer-events: none; }
-.has-savebar .toasts { bottom: 96px; }
 .toast { background: #444448; border-radius: 999px; padding: 10px 22px; box-shadow: 0 2px 8px rgb(0 0 0 / 35%); font-weight: 600; max-width: min(640px, 80vw); text-align: center; animation: pop 160ms ease-out; pointer-events: auto; }
 .toast.error { background: #5a2e2e; }
 
@@ -260,20 +248,10 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .levelbar.disabled { opacity: .5; cursor: default; }
 .levelbar canvas, .travelbar canvas { display: block; width: 100%; }
 
-/* ---------------------------------------------------------------- HITS, Buttons (two columns, no outer scroll) */
-.split { flex: 1; min-height: 0; display: flex; gap: 16px; padding: 24px; }
-.split > .ss-panel { flex: none; overflow: hidden; }
-.stage { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 16px; }
-.stage .toolbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+/* ---------------------------------------------------------------- mouse picture, chips */
 .mouseview { flex: 1; min-height: 300px; position: relative; }
 .mouseview canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; user-select: none; }
-.hits-panel { flex: 0 1 474px; min-width: 380px; }
-.hits-panel .head, .row-head { display: flex; align-items: center; gap: 8px; }
-.hits-panel .tabpage { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; animation: fade 200ms ease-out; margin: 0 -6px; padding: 0 6px 4px; }
-.value-row { display: flex; align-items: baseline; gap: 8px; }
-.value-row button { align-self: center; margin-left: auto; }
-.buttons-panel { width: 400px; padding: 0; }
-.buttons-panel .scroller { overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; flex: 1; min-height: 0; }
+.row-head { display: flex; align-items: center; gap: 8px; }
 .chips3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .chips4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
 .ss-title.gap { margin-top: 8px; }
@@ -295,22 +273,6 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .card .name:focus { background: rgb(0 0 0 / 25%); outline: 2px solid rgb(59 156 255 / 60%); }
 .card .name::placeholder { color: var(--text); opacity: 1; }
 .card .line { display: flex; align-items: center; gap: 8px; }
-.card .summary { display: flex; gap: 14px; flex-wrap: wrap; font-weight: 800; font-variant-numeric: tabular-nums; }
-.card .summary span { display: inline-flex; align-items: center; gap: 5px; }
-.card .summary .ico { color: var(--accent); }
-.card .summary .rt .ico { color: var(--orange); }
-.panel .cards { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
-
-/* feel library */
-.feel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-.feel-card { background: var(--scene); border: 1px solid var(--line); border-radius: 14px; padding: 6px 10px 10px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; transition: border-color var(--fast) var(--ease), transform var(--fast) var(--ease); min-width: 0; }
-.feel-card:hover { border-color: rgb(59 156 255 / 60%); }
-.feel-card:active { transform: scale(.98); }
-.feel-card:focus-visible { outline: 2px solid rgb(59 156 255 / 60%); outline-offset: 1px; }
-.feel-card .illustration { width: 100%; }
-.feel-name { display: flex; align-items: center; gap: 4px; font-weight: 800; min-height: 34px; }
-.feel-name span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.feel-card .ss-hint { font-size: 11.5px; white-space: pre-wrap; }
 .card .summary { display: flex; gap: 14px; flex-wrap: wrap; font-weight: 800; font-variant-numeric: tabular-nums; }
 .card .summary span { display: inline-flex; align-items: center; gap: 5px; }
 .card .summary .ico { color: var(--accent); }
@@ -379,8 +341,8 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .illustration { display: block; width: auto; max-width: 100%; }
 
 /* segmented choice, sliders with steps */
-.segments { display: flex; background: var(--raised); border-radius: 12px; padding: 4px; gap: 4px; }
-.segments button { flex: 1 1 0; background: none; min-height: 34px; padding: 0 8px; border-radius: 9px; font-weight: 700; font-size: 13.5px; white-space: nowrap; }
+.segments { display: flex; flex-wrap: wrap; background: var(--raised); border-radius: 12px; padding: 4px; gap: 4px; min-width: 0; }
+.segments button { flex: 1 1 0; min-width: 0; background: none; min-height: 34px; padding: 0 8px; border-radius: 9px; font-weight: 700; font-size: 13.5px; overflow-wrap: anywhere; }
 .segments button:hover:not(:disabled) { background: rgb(255 255 255 / 6%); }
 .segments button.on, .segments button.on:hover:not(:disabled) { background: var(--accent); color: #fff; }
 .steps { display: flex; flex-direction: column; gap: 6px; }
@@ -406,11 +368,10 @@ details.fold > .fold-body { padding: 0 18px 18px; display: flex; flex-direction:
   .studio { display: block; overflow-y: auto; }
   .stage-mouse { padding: 12px; }
   .stage-mouse .mouseview { min-height: 380px; flex: none; }
-  .panel { overflow: visible; border-inline-start: 0; border-top: 1px solid var(--line); padding: 16px; }
+  .panel { overflow: visible; border-inline-start: 0; border-top: 1px solid var(--line); padding: 16px 16px 120px; }
+  .savebar-wrap { position: fixed; width: auto; inset-inline-start: 0; padding: 0 12px 12px; }
   .profile-switch > button { min-width: 0; max-width: 200px; }
   .topbar button.save span { display: none; }
-  .segments { flex-wrap: wrap; }
-  .segments button { white-space: normal; min-width: 0; }
   .savebar { padding: 10px 14px; gap: 10px; }
   .savebar .ss-hint { display: none; }
   .savebar button { white-space: nowrap; }

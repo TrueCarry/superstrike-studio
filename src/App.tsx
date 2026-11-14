@@ -89,11 +89,13 @@ function Layout() {
           <TopBar />
           <div className="studio">
             <Stage />
-            <main className="panel" key={pathname}>
-              <Outlet />
+            <main className="panel">
+              <div className="panel-body" key={pathname}>
+                <Outlet />
+              </div>
             </main>
+            <SaveBar />
           </div>
-          <SaveBar />
           <QuickSetup />
         </>
       ) : (

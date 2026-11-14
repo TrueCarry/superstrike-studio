@@ -3,45 +3,49 @@
 // and writes tools/parity/out/report.html with all of them.
 //   node tools/parity/shots.mjs [name ...]      (default: every shot)
 // Uses the dev server on 127.0.0.1:8017 when it runs, otherwise starts one. No extra packages.
-import { execFileSync } from "node:child_process";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { ROOT, SERVER, ensureServer, findBrowser } from "./chrome.mjs";
+import { ROOT, SERVER, ensureServer, headless } from "./chrome.mjs";
 
 const OUT = join(ROOT, "tools/parity/out");
-const WIDE = [1440, 900], NARROW = [420, 900];
+const WIDE = [1440, 900], FULL = [1920, 1080], NARROW = [420, 900];
 
-// name -> [query and hash route (profile N, tab, view, unsaved change, held left button + scroll), window size, extra flags]
+// name -> { route: query and hash (profile N, tab, view, unsaved change, held left button + scroll), size, query, motion, run }
 const SHOTS = {
-  connect: ["#/click", WIDE, [], ""],
-  click: ["#/click?dirty=1&press=1", WIDE],
-  aim: ["#/aim?profile=3", WIDE],
-  buttons: ["#/buttons?profile=4&press=1", WIDE],
-  profiles: ["#/profiles?dirty=1", WIDE],
-  device: ["#/device", WIDE],
-  "lang-ja": ["&lang=ja#/profiles?dirty=1", WIDE],
-  "lang-ar": ["&lang=ar#/aim?profile=3", WIDE],
-  "lang-ur": ["&lang=ur#/click", WIDE],
-  narrow: ["#/click", NARROW],
-  "reduced-motion": ["#/aim", WIDE, ["--force-prefers-reduced-motion"]],
+  connect: { route: "#/click", query: "" },
+  click: { route: "#/click?dirty=1&press=1" },
+  aim: { route: "#/aim?profile=3" },
+  buttons: { route: "#/buttons?profile=4&press=1" },
+  profiles: { route: "#/profiles?dirty=1" },
+  device: { route: "#/device" },
+  "full-hd": { route: "#/aim", size: FULL },
+  "test-clicks": { route: "#/click", run: "document.querySelector('.stage-foot .switch input')?.click()" },
+  "lang-ja": { route: "&lang=ja#/profiles?dirty=1" },
+  "lang-ar": { route: "&lang=ar#/aim?profile=3" },
+  "lang-ur": { route: "&lang=ur#/click" },
+  narrow: { route: "#/click", size: NARROW },
+  "reduced-motion": { route: "#/aim", motion: "reduce" },
 };
 // the connect screen is the app without ?demo
-const url = (n) => `${SERVER}?${SHOTS[n][3] ?? "demo&shot"}${SHOTS[n][0]}`;
+const url = (n) => `${SERVER}?${SHOTS[n].query ?? "demo&shot"}${SHOTS[n].route}`;
+const sizeOf = (n) => SHOTS[n].size ?? WIDE;
 
-function shot(browser, name) {
-  const [, size, flags = []] = SHOTS[name];
-  execFileSync(browser, [
-    "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", "--no-default-browser-check",
-    "--force-device-scale-factor=1", `--window-size=${size.join(",")}`, "--virtual-time-budget=6000", ...flags,
-    `--user-data-dir=${join(OUT, "chrome-profile")}`, `--screenshot=${join(OUT, `${name}.png`)}`, url(name),
-  ], { stdio: "ignore", timeout: 60_000 });
+async function shot(page, name) {
+  const [width, height] = sizeOf(name), s = SHOTS[name];
+  await page.send("Emulation.setDeviceMetricsOverride", { width, height, deviceScaleFactor: 1, mobile: false });
+  await page.send("Emulation.setEmulatedMedia", { features: [{ name: "prefers-reduced-motion", value: s.motion ?? "" }] });
+  await page.send("Page.navigate", { url: url(name) });
+  await new Promise((r) => setTimeout(r, 2500));
+  if (s.run) (await page.evaluate(s.run), await new Promise((r) => setTimeout(r, 800)));
+  const { data } = await page.send("Page.captureScreenshot", { format: "png" });
+  writeFileSync(join(OUT, `${name}.png`), Buffer.from(data, "base64"));
 }
 
 function report(names) {
   const rows = names.map((n) => `
 <section id="${n}">
   <h2>${n} <a href="${url(n)}" target="_blank">open live</a></h2>
-  <img src="${n}.png" style="max-width:${SHOTS[n][1][0]}px">
+  <img src="${n}.png" style="max-width:${sizeOf(n)[0]}px">
 </section>`).join("");
   return `<!doctype html><meta charset="utf-8"><title>Design review</title>
 <style>
@@ -56,15 +60,16 @@ ${rows}`;
 const picked = process.argv.slice(2);
 const names = picked.length ? picked : Object.keys(SHOTS);
 for (const n of names) if (!SHOTS[n]) throw new Error(`unknown shot "${n}". Known: ${Object.keys(SHOTS).join(", ")}`);
-const browser = findBrowser();
 mkdirSync(OUT, { recursive: true });
 const server = await ensureServer();
+const page = await headless("about:blank", { port: 9335 });
 try {
   for (const n of names) {
-    shot(browser, n);
+    await shot(page, n);
     console.log(`  ${n}`);
   }
 } finally {
+  await page.close();
   server?.kill();
 }
 writeFileSync(join(OUT, "report.html"), report(names));

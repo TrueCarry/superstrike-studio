@@ -70,7 +70,7 @@ export function Stage() {
         <MouseView view="top" zones={["btn-left", "btn-right"]} callouts="boxes" grid flip={false} thumbnail={false} labelFor={hitsLabel}
           selected={target === "both" ? "" : target === "left" ? "btn-left" : "btn-right"}
           onZone={(z) => setStudio({ target: z === "btn-right" ? "right" : "left" })} onBody={toAim} />
-        <p className="ss-hint center">{t("Click a button on the mouse to tune it.")}</p>
+        <div className="stage-foot"><p className="ss-hint center">{t("Click a button on the mouse to tune it.")}</p></div>
       </div>
     );
   if (tab === "buttons")
@@ -78,13 +78,13 @@ export function Stage() {
       <div className="stage-mouse">
         <MouseView view={view} onView={(v) => setStudio({ view: v })} callouts="lines" flip thumbnail labelFor={actionLabel}
           selected={BUTTON_ZONES[button]} onZone={pickButton} />
-        <p className="ss-hint center">{t("Click a button on the mouse to change it. Drag sideways to rotate.")}</p>
+        <div className="stage-foot"><p className="ss-hint center">{t("Click a button on the mouse to change it. Drag sideways to rotate.")}</p></div>
       </div>
     );
   return (
     <div className="stage-mouse">
       <MouseView view={view} onView={(v) => setStudio({ view: v })} callouts="none" flip thumbnail onZone={hub} onBody={toAim} />
-      <p className="ss-hint center">{t("Click a part of the mouse to open its settings.")}</p>
+      <div className="stage-foot"><p className="ss-hint center">{t("Click a part of the mouse to open its settings.")}</p></div>
     </div>
   );
 }

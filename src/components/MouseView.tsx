@@ -141,13 +141,11 @@ class Renderer {
     const th = Math.round(Math.min(this.H * 0.24, 170)), tw = Math.round((th * p.w) / p.h);
     return { x: Math.round(this.W - tw - 16), y: Math.round(this.H - th - 38), w: tw, h: th };
   }
+  /** The same size and place on every tab: room for the widest callouts and the thumbnail is always kept. */
   fit(v: number): Rect {
     const p = picture(v), W = this.W, H = this.H;
-    let room = 8;
-    if (this.callouts === "lines") room = Math.min(260, W * 0.3);
-    else if (this.callouts === "boxes") room = Math.min(190, W * 0.28);
-    else if (this.thumbnail) room = this.thumbRect(1 - v).w + 22;
-    const s = Math.min(Math.max(50, W - 2 * room) / p.w, Math.max(50, H - 30) / p.h);
+    const room = Math.max(Math.min(260, W * 0.3), this.thumbRect(1 - v).w + 22);
+    const s = Math.min(Math.max(50, W - 2 * room) / p.w, Math.max(50, Math.min(H - 30, 720)) / p.h);
     const w = Math.round(p.w * s), h = Math.round(p.h * s);
     return { x: Math.round((W - w) / 2), y: Math.round((H - h) / 2), w, h };
   }
@@ -224,6 +222,8 @@ class Renderer {
     let v = this.cur, sx = 1;
     if (this.anim) (v = this.anim.p < 0.5 ? this.anim.from : this.anim.to), (sx = Math.max(0.02, Math.abs(Math.cos(Math.PI * this.anim.p))));
     const r = this.fit(v);
+    const placed = `${r.x},${r.y},${r.w},${r.h}`;
+    if (!this.anim && this.canvas.dataset.fit !== placed) this.canvas.dataset.fit = placed; // read by tools/parity/layout.mjs
     g.save(); // floor shadow
     g.translate(W / 2, r.y + r.h * 0.98);
     g.scale(r.w * 0.42 * sx, 14);

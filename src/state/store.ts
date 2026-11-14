@@ -97,7 +97,7 @@ const set = (patch: Partial<State> | ((s: State) => Partial<State>)) => {
 };
 export const getState = () => state;
 // Dev builds: the live store, for debugging from the console.
-if (import.meta.env.DEV) Object.assign(globalThis, { __superstrike: { getState } });
+if (import.meta.env.DEV) Object.assign(globalThis, { __superstrike: { getState, updateProfile: (fn: (p: Profile) => void) => updateProfile(fn) } });
 export function useStore<T>(select: (s: State) => T): T {
   return useSyncExternalStore(
     (l) => (listeners.add(l), () => listeners.delete(l)),
