@@ -31,7 +31,7 @@ export function effectiveAction(p: Profile | null, factory: Profile | null, laye
 export function Stage() {
   const profile = useStore(currentProfile);
   const factory = useStore((s) => s.factory);
-  const { target, button, layer, view, test } = useStudio((s) => s);
+  const { target, button, wheel, layer, view, test } = useStudio((s) => s);
   const tab = useLocation().pathname.split("/")[1] || "click";
   useEffect(() => {
     if (tab !== "click" && test) setStudio({ test: false });
@@ -56,7 +56,7 @@ export function Stage() {
   const pickButton = (z: Zone) => {
     const i = BUTTON_ZONES.indexOf(z);
     const v = z === "btn-back" || z === "btn-forward" ? "side" : z === "btn-middle" ? view : "top";
-    setStudio({ button: i, view: v });
+    setStudio({ button: i, wheel: false, view: v });
   };
 
   let picture;
@@ -70,7 +70,7 @@ export function Stage() {
   else if (tab === "buttons")
     picture = (
       <MouseView view={view} onView={(v) => setStudio({ view: v })} callouts="lines" flip thumbnail labelFor={actionLabel}
-        selected={BUTTON_ZONES[button]} onZone={pickButton} />
+        selected={wheel ? "btn-middle" : BUTTON_ZONES[button]} onZone={pickButton} />
     );
   else picture = <MouseView view={view} onView={(v) => setStudio({ view: v })} callouts="none" flip thumbnail />;
 

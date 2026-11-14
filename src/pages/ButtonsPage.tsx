@@ -1,5 +1,6 @@
 // Buttons page (upstream page_buttons.cpp): an action for each of the five buttons, on the normal
-// and the DPI-shift layer. The mouse with line callouts on the left, one panel on the right.
+// and the DPI-shift layer, and the scroll wheel's filter. The mouse with line callouts on the left,
+// one panel on the right.
 import { FxCard, Segments } from "../components/cards";
 import { Boxed, ComboRow, Row, SpinRow } from "../components/controls";
 import { ask, closeDialog } from "../components/dialogs";
@@ -15,6 +16,7 @@ const KIND_CHIPS: { kind: Kind; label: string }[] = [
   { kind: "function", label: "Function" }, { kind: "disabled", label: "Disabled" }, { kind: "default", label: "Default" },
 ];
 const MOD_BITS = MODIFIERS.slice(0, 4); // Ctrl, Shift, Alt, Super
+const SHIFT_HOLD = 0x07; // the "DPI shift (hold)" function
 
 const slotOf = (p: Profile, layer: number, i: number): Action => (layer ? p.shiftButtons : p.buttons)[i];
 
@@ -70,12 +72,17 @@ function recordKey(): Promise<[number, number] | null> {
 export default function ButtonsPage() {
   const profile = useStore(currentProfile);
   const factory = useStore((s) => s.factory);
-  const { button: sel, layer, view } = useStudio((s) => s);
+  const { button: sel, wheel, layer, view } = useStudio((s) => s);
   const setLayer = (v: number) => setStudio({ layer: v });
   const effective = (i: number) => effectiveAction(profile, factory, layer, i);
 
   const cur = profile ? slotOf(profile, layer, sel) : null;
   const kind = cur ? kindOf(cur) : "default";
+  const shiftAt = BUTTON_ZONES.findIndex((_, i) => {
+    const a = effectiveAction(profile, factory, 0, i);
+    return kindOf(a) === "function" && codeOf(a) === SHIFT_HOLD;
+  });
+  const held = layer && shiftAt >= 0 && shiftAt !== sel ? BUTTON_ZONES[shiftAt] : undefined;
 
   const setAction = (a: Action) => {
     const p = currentProfile(getState());
@@ -90,8 +97,10 @@ export default function ButtonsPage() {
   };
   const select = (i: number) => {
     const z = BUTTON_ZONES[i];
-    setStudio({ button: i, view: z === "btn-back" || z === "btn-forward" ? "side" : z === "btn-middle" ? view : "top" });
+    setStudio({ button: i, wheel: false, view: z === "btn-back" || z === "btn-forward" ? "side" : z === "btn-middle" ? view : "top" });
   };
+  const filterMs = profile ? Math.min(profile.scrollFilter, 100) * 10 : 0;
+  const filterText = filterMs ? `${filterMs} ms` : tc("level value", "off");
   const combo = (title: string, table: Named[], k: Kind, search = false) => (
     <Boxed>
       <ComboRow<number> title={title} search={search} value={cur ? codeOf(cur) : 0} onChange={(c) => setAction(actionFor(k, c))}
@@ -103,18 +112,33 @@ export default function ButtonsPage() {
     <>
       <div className="panel-head"><h2>{tc("page", "Buttons")}</h2></div>
       <FxCard title={t("Button")} icon="mouse">
-        <p className="ss-hint">{t("Pick a button here or on the mouse. The DPI-shift layer is used while a button set to DPI shift is held.")}</p>
-        <Segments<number> value={layer} onChange={setLayer} label={t("Used while a button set to DPI shift is held")}
-          options={[{ value: 0, label: tc("button layer", "Normal") }, { value: 1, label: t("DPI-shift layer") }]} />
+        <p className="ss-hint">{t("Pick a button here or on the mouse.")}</p>
+        <Segments<number> value={layer} onChange={setLayer} label={t("Which actions to change")}
+          options={[{ value: 0, label: tc("button layer", "Normal") }, { value: 1, label: t("While DPI shift is held") }]} />
+        <p className="ss-hint">{shiftAt >= 0
+          ? f(t("Holding %s (DPI shift) slows the cursor, and every other button can do something else, like Fn on a laptop keyboard."), buttonName(shiftAt))
+          : t("Set a button to DPI shift (hold) first. Holding it slows the cursor, and every other button can do something else, like Fn on a laptop keyboard.")}</p>
         <Boxed>
           {BUTTON_ZONES.map((z, i) => (
-            <Row key={z} title={buttonName(i)} subtitle={profile ? describe(effective(i)) : ""} selected={i === sel} onClick={() => select(i)} />
+            <Row key={z} title={buttonName(i)} subtitle={profile ? describe(effective(i)) : ""} selected={!wheel && i === sel} onClick={() => select(i)} />
           ))}
+          <Row title={t("Scroll wheel")} subtitle={f(t("Scroll filter: %s"), filterText)} selected={wheel}
+            onClick={() => setStudio({ wheel: true, view: "top" })} />
         </Boxed>
       </FxCard>
-      <FxCard title={t("Action")} icon="buttons" value={profile ? <small>{describe(effective(sel))}</small> : undefined}
-        scene="remap" sceneValue={{ steps: [[BUTTON_ZONES[sel], iconOf(effective(sel))]] }} tall>
-          <p className="ss-hint">{f(t("What %s does."), buttonName(sel))}</p>
+      {wheel && profile && (
+        <FxCard title={t("Scroll wheel")} icon="mouse" scene="scroll" sceneValue={{ ms: filterMs }} tall
+          value={filterMs ? <>{filterMs}<small>ms</small></> : tc("level value", "off")}>
+          <p className="ss-hint">{t("Bunny-hop scroll filter, 0 = off")}</p>
+          <Boxed>
+            <SpinRow title={t("Scroll filter (ms)")} value={filterMs} min={0} max={1000} step={10}
+              onCommit={(v) => updateProfile((p) => (p.scrollFilter = Math.round(v / 10)))} />
+          </Boxed>
+        </FxCard>
+      )}
+      {!wheel && <FxCard title={t("Action")} icon="buttons" value={profile ? <small>{describe(effective(sel))}</small> : undefined}
+        scene="remap" sceneValue={{ steps: [[BUTTON_ZONES[sel], iconOf(effective(sel))]], hold: held }} tall>
+          <p className="ss-hint">{f(layer ? t("What %s does while DPI shift is held.") : t("What %s does."), buttonName(sel))}</p>
           <div className="chips3">
             {KIND_CHIPS.map((c) => (
               <button key={c.kind} className={`ss-chip ${cur && c.kind === kind ? "on" : ""}`} aria-pressed={c.kind === kind}
@@ -152,17 +176,7 @@ export default function ButtonsPage() {
           {kind === "raw" && cur && <Boxed><Row title={t("Macro or custom data (kept as is)")} subtitle={hexText(cur)} /></Boxed>}
           {kind === "default" && profile && <p className="ss-hint">{f(t("Uses the factory action: %s"), describe(effective(sel)))}</p>}
           <button className="flat" disabled={!profile || !factory} onClick={() => factory && setAction(slotOf(factory, layer, sel))}>{t("Restore factory action")}</button>
-      </FxCard>
-      {profile && (
-        <FxCard title={t("Scroll wheel")} icon="mouse" scene="scroll" sceneValue={{ ms: Math.min(profile.scrollFilter, 100) * 10 }} tall
-          value={profile.scrollFilter ? <>{profile.scrollFilter * 10}<small>ms</small></> : tc("level value", "off")}>
-          <p className="ss-hint">{t("Bunny-hop scroll filter, 0 = off")}</p>
-          <Boxed>
-            <SpinRow title={t("Scroll filter (ms)")} value={Math.min(profile.scrollFilter, 100) * 10} min={0} max={1000} step={10}
-              onCommit={(v) => updateProfile((p) => (p.scrollFilter = Math.round(v / 10)))} />
-          </Boxed>
-        </FxCard>
-      )}
+      </FxCard>}
     </>
   );
 }

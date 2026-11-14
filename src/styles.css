@@ -68,6 +68,24 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .device-chip .level { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ok); white-space: nowrap; }
 .device-chip.low .level { color: var(--warn); }
 .device-chip.charging .level { color: var(--accent-fg); }
+.device-chip.active { background: rgb(59 156 255 / 18%); }
+.device-chip img.hello { animation: hello 700ms var(--ease); }
+@keyframes hello { 0%, 100% { transform: none; } 20% { transform: translateY(-5px) rotate(-14deg); } 45% { transform: rotate(12deg); } 70% { transform: rotate(-6deg); } }
+.popover.mouse-card { left: 0; right: auto; width: 320px; padding: 14px; gap: 12px; }
+.mouse-card header { display: flex; align-items: center; gap: 12px; }
+.mouse-card header img { width: 44px; height: 44px; }
+.mouse-card header div { display: flex; flex-direction: column; min-width: 0; }
+.popover.mouse-card .ss-hint { padding: 0; }
+.mouse-card .now { display: flex; flex-wrap: wrap; gap: 6px; }
+.mouse-card .now span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgb(255 255 255 / 7%); font-size: 12.5px; font-weight: 700; }
+.mouse-card .now .ico { color: var(--accent-fg); width: 14px; height: 14px; }
+.mouse-card .session { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.mouse-card .session div { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 12px; background: var(--row); }
+.mouse-card .session b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.mouse-card .session span { font-size: 11.5px; opacity: .7; text-align: center; }
+.mouse-card footer { display: flex; align-items: center; gap: 8px; }
+.popover.mouse-card footer button { font-weight: 700; justify-content: center; }
+.popover.mouse-card footer button.suggested { background: var(--accent); }
 .battery-cell { flex: none; }
 .topbar button.save .count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: rgb(255 255 255 / 25%); font-size: 12px; }
 
@@ -78,7 +96,8 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .tabs a:hover { color: var(--text); background: rgb(255 255 255 / 5%); }
 .tabs a.on { background: var(--accent); color: #fff; }
 .tabs a:focus-visible { outline: 2px solid rgb(59 156 255 / 60%); outline-offset: 1px; }
-.profile-switch > button { min-width: 180px; max-width: 260px; }
+/* one width whatever the label, so the unsaved mark never pushes Save onto a second row */
+.profile-switch > button { width: 240px; max-width: 260px; }
 .topbar button.save { display: inline-flex; align-items: center; gap: 8px; }
 
 /* studio: the mouse in the middle, the settings panel next to it */
@@ -137,8 +156,6 @@ button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: i
 .ss-chip:hover:not(:disabled) { background: #454548; }
 .ss-chip.on, .ss-chip.on:hover:not(:disabled) { background: var(--accent); color: #fff; }
 .ss-star { font-size: 10px; color: var(--warn); }
-.ss-inuse { font-size: 9px; font-weight: 800; letter-spacing: .08em; color: var(--ok); }
-.ss-chip.on .ss-inuse { color: #fff; }
 /* ---------------------------------------------------------------- boxed lists */
 .boxed { background: var(--row); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 0 1px rgb(0 0 0 / 3%), 0 1px 3px rgb(0 0 0 / 7%); flex: none; }
 .boxed > * + * { border-top: 1px solid var(--sep); }
@@ -262,11 +279,16 @@ button.brow:hover:not(:disabled), .brow.activatable:hover { background: rgb(255 
 .ss-title.gap { margin-top: 8px; }
 
 /* ---------------------------------------------------------------- Sensor */
-.stage-chips { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-.stage-chips .ss-chip { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px; border-radius: 999px; font-weight: 700; min-height: 46px; }
-.stage-chips .top { display: flex; gap: 4px; align-items: center; font-size: 12.5px; opacity: .78; font-weight: 400; }
-.stage-chips .on .top { opacity: 1; }
-.stage-chips .dim .dpi { opacity: .55; }
+.stage-chips { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; padding: 4px; background: var(--raised); border-radius: 12px; }
+.stage-chips button { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-width: 0; min-height: 52px; padding: 6px 4px; background: none; border-radius: 9px; font-weight: 700; font-size: 15px; }
+.stage-chips button:hover:not(:disabled) { background: rgb(255 255 255 / 6%); }
+.stage-chips button.on, .stage-chips button.on:hover:not(:disabled) { background: var(--accent); color: #fff; }
+.stage-chips .top { display: flex; gap: 4px; align-items: center; height: 14px; font-size: 11.5px; font-weight: 600; opacity: .7; }
+.stage-chips .on .top { opacity: .9; }
+.stage-chips .on .ss-star { color: #fff; }
+.stage-chips .inuse { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.stage-chips .on .inuse { background: #fff; }
+.stage-chips .dim .dpi { opacity: .5; font-weight: 600; }
 
 /* ---------------------------------------------------------------- Profiles: one row per slot, the same parts in the same places */
 .profile-list, .feel-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; background: var(--row); border-radius: 12px; overflow: hidden; }

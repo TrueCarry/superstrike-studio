@@ -3,13 +3,14 @@
 // bar that slides up while there are unsaved changes.
 import { useEffect, useRef, useState } from "react";
 import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router";
-import { batteryStateText } from "./hid/device";
-import { Dropdown } from "./components/controls";
+import { RATES_HZ, batteryStateText } from "./hid/device";
+import { Dropdown, useDismiss } from "./components/controls";
 import { DialogHost } from "./components/dialogs";
 import { Icon, type IconName } from "./components/icons";
 import { QuickSetup, useFirstConnectSetup } from "./components/QuickSetup";
 import { Stage } from "./components/Stage";
-import { inputPress, inputWheel } from "./components/useMouseInput";
+import { waveMice } from "./components/MouseView";
+import { inputPress, inputWheel, session } from "./components/useMouseInput";
 import { f, t, tc, tn, useLanguage } from "./i18n/i18n";
 import { Illustration } from "./illustrations/Illustration";
 import AimPage from "./pages/AimPage";
@@ -18,7 +19,7 @@ import ClickPage from "./pages/ClickPage";
 import DevicePage, { LanguagePicker } from "./pages/DevicePage";
 import ProfilesPage from "./pages/ProfilesPage";
 import {
-  autoConnect, connect, connectDemo, discard, getState, markDirty, save, setEdit, slotOf, useStore, type State,
+  autoConnect, connect, connectDemo, discard, getState, markDirty, save, setEdit, slotOf, unsavedFelt, useStore, type State,
 } from "./state/store";
 
 const TABS: { to: string; title: string; icon: IconName }[] = [
@@ -119,10 +120,13 @@ function Battery(props: { level: number; charging: boolean; low: boolean }) {
   );
 }
 
-/** Logo, mouse name and battery in one chip; a click opens the Device tab. */
+/** Logo, mouse name and battery in one chip. A click makes the mouse say hello and opens its card. */
 function DeviceChip() {
   const info = useStore((s) => s.info);
-  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const host = useRef<HTMLSpanElement>(null);
+  const close = useRef(() => setOpen(false)).current;
+  useDismiss(open, host, close);
   if (!info) return null;
   const charging = info.batteryState.startsWith("charg");
   const level = info.battery >= 0;
@@ -130,23 +134,79 @@ function DeviceChip() {
   const bat = level ? f(t("%d %%"), info.battery) : "";
   const label = [info.name, t("Connected"), bat, charging ? batteryStateText(info.batteryState) : ""].filter(Boolean).join(" · ");
   return (
-    <button className={`device-chip ${low ? "low" : ""} ${charging ? "charging" : ""}`} onClick={() => navigate("/device")} title={label} aria-label={label}>
-      <img src="./logo.svg" alt="" />
-      <span className="name">{info.name}</span>
-      {(level || charging) && (
-        <span className="level">
-          <Battery level={info.battery} charging={charging} low={low} />
-          {charging && <Icon name="bolt" size={12} />}
-          {bat}
-        </span>
-      )}
-    </button>
+    <span className="popover-anchor" ref={host}>
+      <button className={`device-chip ${low ? "low" : ""} ${charging ? "charging" : ""} ${open ? "active" : ""}`} title={label} aria-label={label}
+        aria-haspopup="dialog" aria-expanded={open} onClick={() => (!open && waveMice(), setOpen(!open))}>
+        <img src="./logo.svg" alt="" key={String(open)} className={open ? "hello" : ""} />
+        <span className="name">{info.name}</span>
+        {(level || charging) && (
+          <span className="level">
+            <Battery level={info.battery} charging={charging} low={low} />
+            {charging && <Icon name="bolt" size={12} />}
+            {bat}
+          </span>
+        )}
+      </button>
+      {open && <MouseCard close={close} />}
+    </span>
+  );
+}
+
+/** The mouse's card: what it runs right now, and what you did with it since this page opened. */
+function MouseCard(props: { close: () => void }) {
+  const s = useStore((x) => x);
+  const navigate = useNavigate();
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick((n) => n + 1), 500);
+    return () => clearInterval(id);
+  }, []);
+  const info = s.info, p = s.profiles[s.active];
+  if (!info) return null;
+  const stage = p?.stages[info.stage];
+  const rate = p ? (info.index === 0xff ? p.rateWired : p.rateWireless) : -1;
+  // pointer travel on screen over the DPI in use: about how far the hand moved (pointer speed settings aside)
+  const metres = stage?.x ? (session.travel * devicePixelRatio) / stage.x * 0.0254 : 0;
+  const minutes = Math.max(1, Math.round((Date.now() - session.since) / 60000));
+  const stats: [string, string][] = [
+    [String(session.clicks), t("clicks")],
+    [String(session.notches), t("wheel notches")],
+    [metres >= 1 ? f(t("%.1f m"), metres) : f(t("%d cm"), Math.round(metres * 100)), t("hand travel")],
+  ];
+  return (
+    <div className="popover mouse-card" role="dialog" aria-label={info.name}>
+      <header>
+        <img src="./logo.svg" alt="" />
+        <div>
+          <b>{info.name}</b>
+          <span className="ss-hint">{info.index === 0xff ? t("Cable") : f(t("Receiver, slot %d"), info.index)}{info.demo ? ` · ${t("Demo mouse")}` : ""}</span>
+        </div>
+      </header>
+      <div className="now">
+        <span><Icon name="profiles" />{p ? profileLabel(s, s.active) : "—"}</span>
+        <span><Icon name="sensor" />{stage?.x ? `${stage.x} DPI` : "—"}</span>
+        <span><Icon name="device" />{rate >= 0 ? `${RATES_HZ[rate]} Hz` : "—"}</span>
+      </div>
+      <span className="ss-title">{f(t("This session · %d min"), minutes)}</span>
+      <div className="session">
+        {stats.map(([v, k]) => <div key={k}><b>{v}</b><span>{k}</span></div>)}
+      </div>
+      <footer>
+        <button className="flat" onClick={() => waveMice()}>{t("Say hello")}</button>
+        <span className="spacer" />
+        <button className="suggested pill" onClick={() => (props.close(), navigate("/device"))}>{t("Device settings")}</button>
+      </footer>
+    </div>
   );
 }
 
 function TopBar() {
   const dirty = useStore((s) => s.dirty.length);
   const blank = useStore((s) => s.blank);
+  const felt = useStore(unsavedFelt);
+  const hint = !dirty ? t("Only a preview until you save it into the mouse (Ctrl+S).")
+    : felt ? t("Try them on your mouse now. Save to keep them, Discard to go back.")
+    : t("Some of them take effect only after you save.");
   return (
     <header className="topbar">
       <DeviceChip />
@@ -164,7 +224,7 @@ function TopBar() {
       <button className="flat discard" disabled={!dirty} onClick={() => void discard()} title={t("Discard")}>
         <span>{t("Discard")}</span>
       </button>
-      <button className="suggested pill save" disabled={!dirty} onClick={() => void save()} title={`${t("Write the changes into the mouse memory (Ctrl+S)")}\n${t("Only a preview until you save it into the mouse (Ctrl+S).")}`}>
+      <button className="suggested pill save" disabled={!dirty} onClick={() => void save()} title={`${t("Write the changes into the mouse memory (Ctrl+S)")}\n${hint}`}>
         <Icon name="save" />
         <span>{t("Save to mouse")}{blank ? "…" : ""}</span>
         <b className="count" aria-label={f(tn("%d unsaved change", "%d unsaved changes", dirty), dirty)}>{dirty}</b>

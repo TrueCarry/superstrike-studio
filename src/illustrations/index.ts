@@ -32,7 +32,7 @@ export const README: { [N in Exclude<SceneName, "feel">]: SceneValue<N> } = {
   rapid: { rt: [0, 2] },
   haptics: {},
   polling: { rate: [0, 6] },
-  dpi: { ratio: 0.2 },
+  dpi: { normal: 1600, shift: 400 },
   remap: { steps: [["btn-middle", "sensor"], ["btn-forward", "media"], ["btn-back", "copy"]] },
   profiles: {},
   snap: { on: [false, true] },

@@ -17,12 +17,19 @@ const SHOTS = {
   aim: { route: "#/aim?profile=3" },
   "aim-end": { route: "#/aim?profile=3", run: "document.querySelector('.panel').scrollTop = 1e6" },
   buttons: { route: "#/buttons?profile=4&press=1" },
-  "buttons-end": { route: "#/buttons?profile=4", run: "document.querySelector('.panel').scrollTop = 1e6" },
+  "buttons-end": { route: "#/buttons?profile=5", run: "document.querySelector('.panel .fx-card .boxed').lastElementChild.click()" },
   profiles: { route: "#/profiles?dirty=1" },
   "profiles-end": { route: "#/profiles", run: "document.querySelector('.panel').scrollTop = 1e6" },
   device: { route: "#/device" },
   "device-end": { route: "#/device", run: "document.querySelector('.panel').scrollTop = 1e6" },
   "full-hd": { route: "#/aim", size: FULL },
+  // the device chip: the mouse says hello (caught mid-hop) and its card opens
+  "mouse-card": { route: "#/click", run: `(async () => {
+    for (let i = 0; i < 40; i++) document.body.dispatchEvent(new PointerEvent("pointermove", { pointerType: "mouse", screenX: 300 + i * 25, screenY: 400, bubbles: true }));
+    for (let i = 0; i < 7; i++) document.body.dispatchEvent(new PointerEvent("pointerdown", { pointerType: "mouse", button: -1, bubbles: true }));
+    document.querySelector('.device-chip').click();
+    await new Promise((r) => setTimeout(r, 170));
+  })()`, wait: 0 },
   "test-clicks": { route: "#/click", run: "document.querySelector('.stage-foot .switch input')?.click()" },
   "click-right": { route: "#/click", run: "document.querySelectorAll('.panel .segments button')[1]?.click()" },
   "lang-ja": { route: "&lang=ja#/profiles?dirty=1" },
@@ -70,7 +77,7 @@ async function shot(page, name) {
   await page.send("Page.navigate", { url: "about:blank" }); // a fresh load even when only the hash differs
   await page.send("Page.navigate", { url: url(name) });
   await new Promise((r) => setTimeout(r, 2500));
-  if (s.run) (await page.evaluate(s.run), await new Promise((r) => setTimeout(r, 800)));
+  if (s.run) (await page.evaluate(s.run), await new Promise((r) => setTimeout(r, s.wait ?? 800)));
   const { data } = await page.send("Page.captureScreenshot", { format: "png" });
   writeFileSync(join(OUT, `${name}.png`), Buffer.from(data, "base64"));
 }

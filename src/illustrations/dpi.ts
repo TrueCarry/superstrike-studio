@@ -1,19 +1,33 @@
 import { ACCENT, clear, cursor, dot, monitor, mouse, mouseW, rgba } from "./engine";
 import { scene } from "./scene";
 
-/** The same hand move twice: at the normal DPI the cursor flies past the target, holding DPI shift it lands on it. `ratio` = shift DPI / normal DPI. */
-export const dpi = scene<{ ratio?: number }>({
+/**
+ * The same hand move twice, first at the `normal` DPI, then holding DPI shift at `shift` DPI. The cursor
+ * travels in proportion to each value. The target sits where the shift move ends, so a lower shift DPI
+ * shows the normal move flying past it and the shifted one landing on it.
+ */
+export const dpi = scene<{ normal: number; shift: number }>({
   duration: 3.6,
   still: 2.7,
   size: () => [480, 360],
   draw(g, t, v, w, h) {
     const P = 1.8, shift = t >= P, u = (t % P) / P;
-    const swing = u < 0.12 || u > 0.88 ? 0 : Math.sin(((u - 0.12) / 0.76) * Math.PI);
-    const normal = 3.6, gain = shift ? normal * Math.min(1, v.ratio ?? 0.2) : normal;
-    const sx = w / 2, sy = 100, tx = sx + 36;
+    const wave = (q: number) => (q < 0.12 || q > 0.88 ? 0 : Math.sin(((q - 0.12) / 0.76) * Math.PI));
+    const swing = wave(u);
+    const top = Math.max(v.normal, v.shift, 1);
+    const sx = 84, reach = w - 2 * sx, sy = 108;
+    const dist = (d: number) => reach * Math.max(0.08, d / top);
+    const now = shift ? v.shift : v.normal, tx = sx + dist(v.shift);
     clear(g, w, h);
     monitor(g, 40, 22, w - 80, 156);
-    const hit = shift && swing > 0.92 && Math.abs(sx + 50 * gain - tx) < 16;
+    g.font = "800 15px system-ui, sans-serif";
+    g.fillStyle = shift ? ACCENT : "rgba(255,255,255,0.75)";
+    g.textAlign = "center";
+    g.fillText(`${now} DPI`, w / 2, 56);
+    g.textAlign = "start";
+    g.fillStyle = "rgba(255,255,255,0.5)";
+    g.fillRect(sx - 1, sy - 14, 2, 28);
+    const hit = swing > 0.92 && Math.abs(dist(now) - dist(v.shift)) < 10;
     g.strokeStyle = hit ? ACCENT : "rgba(255,255,255,0.55)";
     g.fillStyle = hit ? rgba(ACCENT, 0.25) : "rgba(0,0,0,0)";
     g.lineWidth = 2.5;
@@ -26,10 +40,7 @@ export const dpi = scene<{ ratio?: number }>({
       g.lineTo(tx, sy + b);
     }
     g.stroke();
-    const at = (s: number) => {
-      const q = (((s % P) + P) % P) / P;
-      return Math.min(w - 40, sx + (q < 0.12 || q > 0.88 ? 0 : Math.sin(((q - 0.12) / 0.76) * Math.PI)) * 50 * gain);
-    };
+    const at = (s: number) => sx + wave((((s % P) + P) % P) / P) * dist(now);
     for (let i = 12; i > 0; i--) {
       const s0 = t - (i * 0.5) / 12, s1 = t - ((i - 1) * 0.5) / 12;
       if (s0 < (shift ? P : 0)) continue;
@@ -42,6 +53,6 @@ export const dpi = scene<{ ratio?: number }>({
       g.stroke();
     }
     cursor(g, at(t), sy);
-    mouse(g, w / 2 - mouseW(150) / 2 + swing * 50, 196, 150, { side: shift ? 1 : 0 });
+    mouse(g, w / 2 - mouseW(150) / 2 - 25 + swing * 50, 196, 150, { side: shift ? 1 : 0 });
   },
 });

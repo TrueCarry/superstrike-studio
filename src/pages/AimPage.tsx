@@ -69,6 +69,7 @@ export default function AimPage() {
   };
   const setDpi = (axis: "x" | "y", raw: number) => {
     const v = snapDpi(info.dpiList, raw, st[axis]);
+    if (live && info.stage !== sel) void setStage(sel, true);
     updateProfile((p) => {
       p.stages[sel][axis] = v;
       if (axis === "x" && !sep) p.stages[sel].y = v;
@@ -83,16 +84,16 @@ export default function AimPage() {
 
       <FxCard title={t("DPI stages")} icon="sensor" value={<>{on ? st.x : tc("DPI stage", "off")}<small>DPI</small></>}
         scene="speed" sceneValue={{ dpi: on ? st.x : 0, marks: enabledDpi }} tall>
-        <p className="ss-hint">{t("How far the cursor goes for the same hand move. Click a stage to switch the mouse to it now; new values are felt after saving. ★ = stage after power-on.")}</p>
+        <p className="ss-hint">{t("How far the cursor goes for the same hand move. Click a stage to switch the mouse to it; a new value is felt at once. ★ = stage after power-on.")}</p>
         <div className="stage-chips" role="radiogroup" aria-label={t("DPI stages")}>
           {profile.stages.map((s, i) => (
-            <button key={i} role="radio" aria-checked={i === sel} className={`ss-chip ${i === sel ? "on" : ""} ${s.x ? "" : "dim"}`} onClick={() => clickChip(i)}>
+            <button key={i} role="radio" aria-checked={i === sel} className={`${i === sel ? "on" : ""} ${s.x ? "" : "dim"}`} onClick={() => clickChip(i)}>
               <span className="top">
                 <span>{i + 1}</span>
-                <span className="ss-star" style={{ opacity: profile.defaultStage === i ? 1 : 0 }} title={t("Used after power-on")}>★</span>
+                {profile.defaultStage === i && <span className="ss-star" title={t("Used after power-on")}>★</span>}
+                {live && info.stage === i && <span className="inuse" role="img" aria-label={tc("DPI stage", "IN USE")} title={tc("DPI stage", "IN USE")} />}
               </span>
               <span className="dpi">{s.x ? s.x : tc("DPI stage", "off")}</span>
-              <span className="ss-inuse" style={{ opacity: live && info.stage === i ? 1 : 0 }}>{tc("DPI stage", "IN USE")}</span>
             </button>
           ))}
         </div>
@@ -111,7 +112,7 @@ export default function AimPage() {
         </Boxed>
       </FxCard>
 
-      <FxCard title={t("DPI shift")} icon="buttons" value={<>{shift.x}<small>DPI</small></>} scene="dpi" sceneValue={{ ratio: on && st.x ? shift.x / st.x : 1 }} tall>
+      <FxCard title={t("DPI shift")} icon="buttons" value={<>{shift.x}<small>DPI</small></>} scene="dpi" sceneValue={{ normal: on ? st.x : profile.stages[profile.defaultStage].x, shift: shift.x }} tall>
         <p className="ss-hint">{t("While a button set to DPI shift is held, the mouse slows to this stage for precise aim.")}</p>
         <Segments<number> value={profile.shiftStage} onChange={(v) => edit((p) => (p.shiftStage = v))} label={t("DPI shift")}
           options={profile.stages.map((s, i) => ({ value: i, label: s.x ? String(s.x) : tc("DPI stage", "off"), disabled: !s.x }))} />

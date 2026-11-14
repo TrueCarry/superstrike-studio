@@ -1,5 +1,5 @@
 // PRO X2 / X3 SUPERSTRIKE over HID++ 2.0. Protocol notes from upstream SuperStrike Studio
-// (src/device.hpp, MIT): HITS 0x1B0C, report rate 0x8061, DPI list 0x2202, onboard profiles
+// (src/device.hpp, MIT): HITS 0x1B0C, report rate 0x8061, DPI list and live DPI 0x2202, onboard profiles
 // 0x8100, surface mode 0x8090, battery 0x1004, firmware 0x0003, name 0x0005.
 import { HidppError, sleep, Transport, type Bytes } from "./transport";
 import { f, t, tc } from "../i18n/i18n";
@@ -190,6 +190,20 @@ export class Device {
 
   async hitsSet(button: number, h: Hits): Promise<void> {
     await this.call(F.HITS, 1, [button, (h.act << 2) & 0xfc, ((h.rt << 2) & 0xfc) | (h.rtOn ? 1 : 0), (h.hap << 2) & 0xfc]);
+  }
+
+  /** Report rate in use now, an index into RATES_HZ. */
+  async rateGet(): Promise<number> {
+    return (await this.call(F.RATE, 2))[0];
+  }
+  /** Sets the report rate now, until the next profile load. */
+  async rateSet(idx: number): Promise<void> {
+    await this.call(F.RATE, 3, [idx]);
+  }
+
+  /** Sets the sensor DPI now (0x2202 fn6: [sensor][x][y][lift-off]), until the next stage or profile load. */
+  async dpiSet(x: number, y: number, lod: number): Promise<void> {
+    await this.call(F.DPI, 6, [0, x >> 8, x & 0xff, y >> 8, y & 0xff, lod]);
   }
 
   async rateSupported(): Promise<number[]> {

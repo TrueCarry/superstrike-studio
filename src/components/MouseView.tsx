@@ -113,9 +113,30 @@ class Renderer {
   dragX: number | null = null;
   dragY = 0;
   dragDx = 0;
+  waveT0 = 0;
 
   constructor(public canvas: HTMLCanvasElement) {
     this.g = canvas.getContext("2d")!;
+  }
+
+  /** Hello: the mouse hops twice, each button of this side lights up in turn, then the wheel spins. */
+  wave() {
+    if (this.anim) return;
+    const now = performance.now(), still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    this.waveT0 = still ? 0 : now;
+    ZONES[VIEWS[this.cur]].forEach((z, i) => {
+      this.ripples.push([z, now + 120 + i * 170]);
+      setTimeout(() => (this.press.set(z, 0.9), this.tick()), 120 + i * 170);
+    });
+    setTimeout(() => this.inputScroll(3), 120 + ZONES[VIEWS[this.cur]].length * 170);
+    this.tick();
+  }
+  /** Height of the hop now, 0..1. */
+  lift(now = performance.now()) {
+    if (!this.waveT0) return 0;
+    const t = (now - this.waveT0) / 1000;
+    if (t >= 0.8) return (this.waveT0 = 0);
+    return t < 0.45 ? Math.sin((Math.PI * t) / 0.45) : 0.4 * Math.sin((Math.PI * (t - 0.45)) / 0.35);
   }
 
   get callouts(): Callouts {
@@ -223,15 +244,16 @@ class Renderer {
     g.clearRect(0, 0, W, H);
     let v = this.cur, sx = 1;
     if (this.anim) (v = this.anim.p < 0.5 ? this.anim.from : this.anim.to), (sx = Math.max(0.02, Math.abs(Math.cos(Math.PI * this.anim.p))));
-    const r = this.fit(v);
-    const placed = `${r.x},${r.y},${r.w},${r.h}`;
+    const fit = this.fit(v);
+    const placed = `${fit.x},${fit.y},${fit.w},${fit.h}`;
     if (!this.anim && this.canvas.dataset.fit !== placed) this.canvas.dataset.fit = placed; // read by tools/parity/layout.mjs
-    g.save(); // floor shadow
-    g.translate(W / 2, r.y + r.h * 0.98);
-    g.scale(r.w * 0.42 * sx, 14);
+    const up = this.lift(), r = { ...fit, y: fit.y - up * Math.min(60, fit.h * 0.07) };
+    g.save(); // floor shadow, smaller while the mouse is in the air
+    g.translate(W / 2, fit.y + fit.h * 0.98);
+    g.scale(fit.w * 0.42 * sx * (1 - 0.25 * up), 14 * (1 - 0.3 * up));
     dot(g, 0, 0, 1);
     g.restore();
-    g.fillStyle = "rgba(0,0,0,0.28)";
+    g.fillStyle = `rgba(0,0,0,${0.28 * (1 - 0.4 * up)})`;
     g.fill();
     g.save();
     g.translate(W / 2, 0);
@@ -513,7 +535,7 @@ class Renderer {
       else this.press.delete("wheel");
       this.ripples = this.ripples.filter(([, t0]) => now - t0 < 600);
       this.draw();
-      let busy = !!this.anim || this.vel !== 0 || this.ripples.length > 0;
+      let busy = !!this.anim || this.vel !== 0 || this.ripples.length > 0 || this.waveT0 > 0;
       for (const [z, l] of this.press) busy ||= l > 0 && !(l === 1 && this.held.get(z));
       this.raf = busy ? requestAnimationFrame(step) : 0;
     };
@@ -549,6 +571,10 @@ class Renderer {
   }
 }
 
+const mounted = new Set<Renderer>();
+/** Makes every mouse picture on screen say hello (the device chip in the top bar). */
+export const waveMice = () => mounted.forEach((rd) => rd.wave());
+
 export function MouseView(props: MouseViewProps) {
   const shell = useStore((s) => s.shell);
   const accent = useStore((s) => s.accent);
@@ -564,7 +590,9 @@ export function MouseView(props: MouseViewProps) {
     rd.cur = VIEWS.indexOf(props.view);
     const ro = new ResizeObserver(() => rd.resize(host.current!.clientWidth, host.current!.clientHeight));
     ro.observe(host.current!);
+    mounted.add(rd);
     return () => {
+      mounted.delete(rd);
       ro.disconnect();
       cancelAnimationFrame(rd.raf);
     };

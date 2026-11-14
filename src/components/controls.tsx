@@ -389,11 +389,15 @@ export function Combo<T extends string | number>(props: { id?: string; value: T;
 }
 
 /**
- * AdwSpinRow: number with − / +. Typing commits on Enter or blur, so "1600" does not send 1, 16, 160 first.
+ * AdwSpinRow: number with − / +. Typing commits after a short pause (when the number is in range), on
+ * Enter or on blur, so "1600" does not send 1, 16, 160 first.
  * `step` moves from the current value; onCommit gets the clamped new value and the old one.
  */
 export function SpinRow(props: { title: string; subtitle?: string; value: number; min: number; max: number; step: number; onCommit: (v: number, prev: number) => void; disabled?: boolean }) {
+  const pause = useRef<ReturnType<typeof setTimeout>>(undefined);
+  useEffect(() => () => clearTimeout(pause.current), []);
   const commit = (v: number) => {
+    clearTimeout(pause.current);
     const c = Math.min(props.max, Math.max(props.min, Math.round(v)));
     if (c !== props.value) props.onCommit(c, props.value);
   };
@@ -401,6 +405,11 @@ export function SpinRow(props: { title: string; subtitle?: string; value: number
     <Row title={props.title} subtitle={props.subtitle} disabled={props.disabled}>
       <span className="spin">
         <input key={props.value} type="number" inputMode="numeric" defaultValue={props.value} min={props.min} max={props.max} step={props.step} aria-label={props.title} disabled={props.disabled}
+          onInput={(e) => {
+            const v = e.currentTarget.valueAsNumber;
+            clearTimeout(pause.current);
+            if (Number.isFinite(v) && v >= props.min && v <= props.max) pause.current = setTimeout(() => commit(v), 700);
+          }}
           onBlur={(e) => (Number.isFinite(+e.currentTarget.value) ? commit(+e.currentTarget.value) : (e.currentTarget.value = String(props.value)))}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()} />
         <button aria-label="−" disabled={props.disabled || props.value <= props.min} onClick={() => commit(props.value - props.step)}><Icon name="minus" /></button>
@@ -459,7 +468,7 @@ export function MenuButton(props: { icon: IconName; tooltip: string; children: (
 }
 
 /** Closes an open popover on a click outside `host` or Escape. */
-function useDismiss(open: boolean, host: React.RefObject<HTMLElement | null>, close: () => void) {
+export function useDismiss(open: boolean, host: React.RefObject<HTMLElement | null>, close: () => void) {
   useEffect(() => {
     if (!open) return;
     const away = (e: Event) => host.current && !host.current.contains(e.target as Node) && close();
