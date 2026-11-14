@@ -4,15 +4,13 @@
 //   node tools/parity/shots.mjs [name ...]      (default: every shot)
 //   node tools/parity/shots.mjs --readme        (the README screenshots, into docs/screenshots/)
 // Uses the dev server on 127.0.0.1:8017 when it runs, otherwise starts one. No extra packages.
-import { execFileSync, spawn } from "node:child_process";
-import { copyFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
-import { dirname, join, resolve } from "node:path";
-import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { ROOT, SERVER, ensureServer, findBrowser } from "./chrome.mjs";
 
-const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const OUT = join(ROOT, "tools/parity/out");
 const NATIVE_COMMIT = "991cbfc"; // last commit with the native app and its screenshots
-const SERVER = "http://127.0.0.1:8017/";
 const SIZE = [1310, 850]; // the native screenshots' size
 
 // name -> page query and hash route with the state the native capture used (language, profile N, tab,
@@ -29,35 +27,6 @@ const SHOTS = {
   "lang-ar": "&lang=ar#/sensor?profile=3",
 };
 const url = (n) => `${SERVER}?demo${SHOTS[n]}`;
-
-const BROWSERS = [
-  process.env.CHROME,
-  "C:/Program Files/Google/Chrome/Application/chrome.exe",
-  "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-  "/usr/bin/google-chrome",
-  "/usr/bin/chromium",
-  "/usr/bin/chromium-browser",
-].filter(Boolean);
-
-async function serverUp() {
-  try {
-    return (await fetch(SERVER)).ok;
-  } catch {
-    return false;
-  }
-}
-
-async function ensureServer() {
-  if (await serverUp()) return null;
-  const child = spawn(process.execPath, [join(ROOT, "node_modules/vite/bin/vite.js")], { cwd: ROOT, stdio: "ignore" });
-  for (let i = 0; i < 60; i++) {
-    await new Promise((r) => setTimeout(r, 500));
-    if (await serverUp()) return child;
-  }
-  child.kill();
-  throw new Error("the dev server did not start (npm install first?)");
-}
 
 function nativePng(name) {
   return execFileSync("git", ["show", `${NATIVE_COMMIT}:docs/screenshots/${name}.png`], { cwd: ROOT, maxBuffer: 1 << 26 });
@@ -105,8 +74,7 @@ const readme = args.includes("--readme");
 const picked = args.filter((a) => a !== "--readme");
 const names = picked.length ? picked : Object.keys(SHOTS);
 for (const n of names) if (!SHOTS[n]) throw new Error(`unknown shot "${n}". Known: ${Object.keys(SHOTS).join(", ")}`);
-const browser = BROWSERS.find((b) => existsSync(b));
-if (!browser) throw new Error("no Chrome or Edge found; set CHROME=/path/to/chrome");
+const browser = findBrowser();
 mkdirSync(OUT, { recursive: true });
 const server = await ensureServer();
 try {

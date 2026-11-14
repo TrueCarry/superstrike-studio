@@ -34,11 +34,18 @@ PC, at home, at work or on a laptop, and no software update can change how it fe
 The SUPERSTRIKE has no ordinary switch: magnetic sensors and a haptic motor replace it. That gives
 you three dials for each main button.
 
-| | What you feel | Range |
-|---|---|---|
-| **Actuation point** | How far you press before the click counts | 1 hair-trigger … 10 deep |
-| **Rapid trigger** | How little you lift before the next click can count, for fast repeated clicks | 1 fastest … 5 slowest, or off |
-| **Click haptics** | How strong the click feels under your finger | 0 silent … 5 strongest |
+<table>
+  <tr>
+    <td width="33%"><img src="docs/illustrations/actuation.gif" alt="The same press on two mice: the shallow click point fires early, the deep one fires near the bottom"></td>
+    <td width="33%"><img src="docs/illustrations/rapid.gif" alt="The same quick button bounces: without rapid trigger one click counts, with it every bounce counts"></td>
+    <td width="33%"><img src="docs/illustrations/haptics.gif" alt="Six clicks, from no vibration to a firm thump"></td>
+  </tr>
+  <tr>
+    <td><b>Actuation point</b><br>How far you press before the click counts: 1 hair-trigger … 10 deep</td>
+    <td><b>Rapid trigger</b><br>Lift a hair and click again, no full release: 1 fastest … 5 slowest, or off</td>
+    <td><b>Click haptics</b><br>How strong the click feels under your finger: 0 silent … 5 strongest</td>
+  </tr>
+</table>
 
 Change a value and the mouse reacts **instantly**, before you save. The built-in test pad counts
 your clicks per second and how long you held, so you choose by feel, not by guessing.
