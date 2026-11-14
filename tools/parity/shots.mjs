@@ -15,7 +15,9 @@ const SHOTS = {
   connect: { route: "#/click", query: "" },
   click: { route: "#/click?dirty=1&press=1" },
   aim: { route: "#/aim?profile=3" },
+  "aim-end": { route: "#/aim?profile=3", run: "document.querySelector('.panel').scrollTop = 1e6" },
   buttons: { route: "#/buttons?profile=4&press=1" },
+  "buttons-end": { route: "#/buttons?profile=4", run: "document.querySelector('.panel').scrollTop = 1e6" },
   profiles: { route: "#/profiles?dirty=1" },
   device: { route: "#/device" },
   "full-hd": { route: "#/aim", size: FULL },
@@ -26,6 +28,24 @@ const SHOTS = {
   "lang-ur": { route: "&lang=ur#/click" },
   narrow: { route: "#/click", size: NARROW },
   "reduced-motion": { route: "#/aim", motion: "reduce" },
+  // the newer scenes at a few moments of their loop, side by side
+  scenes: { route: "#/click", size: [1600, 1100], run: `(async () => {
+    const { SCENES } = await import("/src/illustrations/index.ts");
+    const rows = [["speed", { dpi: 1600, marks: [800, 1600, 3200] }], ["surface", { mode: 0 }], ["surface", { mode: 2 }], ["scroll", { ms: 100 }], ["power", { low: 60, sleep: 300 }], ["save", { act: 3, dpi: 1600, hap: 2 }]];
+    document.body.innerHTML = "";
+    document.body.style.cssText = "overflow:auto;background:#111;display:grid;grid-template-columns:repeat(5,1fr);gap:4px";
+    for (const [name, v] of rows) {
+      const sc = SCENES[name];
+      if (!sc) continue;
+      const [w, h] = sc.size(v);
+      for (const k of [0.15, 0.35, 0.55, 0.75, 0.95]) {
+        const c = document.createElement("canvas");
+        c.width = w; c.height = h; c.style.width = "100%";
+        sc.draw(c.getContext("2d"), sc.duration * k, v, w, h);
+        document.body.append(c);
+      }
+    }
+  })()` },
 };
 // the connect screen is the app without ?demo
 const url = (n) => `${SERVER}?${SHOTS[n].query ?? "demo&shot"}${SHOTS[n].route}`;

@@ -1,9 +1,9 @@
-// Aim panel (upstream page_sensor.cpp): DPI stages and DPI shift, polling rate, lift-off distance and
-// angle snapping, each on a card with its animation. Scroll filter, surface mode and power sit under Advanced.
+// Aim panel (upstream page_sensor.cpp): how the cursor moves. DPI stages, DPI shift, polling rate,
+// lift-off distance, angle snapping and surface tuning, each on a card with its animation.
+// The scroll filter is on Buttons (Scroll wheel) and the power timers on Device (Battery life).
 import { useState } from "react";
 import { FxCard, Segments } from "../components/cards";
-import { Boxed, ComboRow, SpinRow, SwitchRow } from "../components/controls";
-import { Icon } from "../components/icons";
+import { Boxed, SpinRow, SwitchRow } from "../components/controls";
 import { f, t, tc } from "../i18n/i18n";
 import type { Profile } from "../model/profile";
 import { currentProfile, setStage, setSurface, toast, updateProfile, useStore } from "../state/store";
@@ -46,6 +46,7 @@ export default function AimPage() {
   const sep = separate[sepKey] ?? st.x !== st.y;
   const shift = profile.stages[profile.shiftStage];
   const edit = (fn: (p: Profile) => void) => updateProfile(fn);
+  const enabledDpi = profile.stages.filter((s) => s.x).map((s) => s.x);
 
   // Clicking a stage of the active profile switches the mouse to it at once.
   const clickChip = (i: number) => {
@@ -74,46 +75,41 @@ export default function AimPage() {
     });
   };
   const lod = Math.min(3, Math.max(1, st.lod || 2));
+  const surface = Math.max(0, info.surface);
 
   return (
     <>
       <div className="panel-head"><h2>{tc("page", "Aim")}</h2></div>
 
-      <section className="fx-card">
-        <div className="fx-body">
-          <div className="fx-head">
-            <Icon name="sensor" />
-            <h3>{t("DPI STAGES")}</h3>
-            <span className="fx-value">{on ? st.x : tc("DPI stage", "off")}<small>DPI</small></span>
-          </div>
-          <div className="stage-chips" role="radiogroup" aria-label={t("DPI STAGES")}>
-            {profile.stages.map((s, i) => (
-              <button key={i} role="radio" aria-checked={i === sel} className={`ss-chip ${i === sel ? "on" : ""} ${s.x ? "" : "dim"}`} onClick={() => clickChip(i)}>
-                <span className="top">
-                  <span>{i + 1}</span>
-                  <span className="ss-star" style={{ opacity: profile.defaultStage === i ? 1 : 0 }} title={t("Used after power-on")}>★</span>
-                </span>
-                <span className="dpi">{s.x ? s.x : tc("DPI stage", "off")}</span>
-                <span className="ss-inuse" style={{ opacity: live && info.stage === i ? 1 : 0 }}>{tc("DPI stage", "IN USE")}</span>
-              </button>
-            ))}
-          </div>
-          <p className="ss-hint">{t("Click a stage to switch the mouse to it now. New DPI values are felt after Save to mouse (Ctrl+S) — the mouse takes DPI only from its memory. ★ = stage after power-on.")}</p>
-          <Boxed>
-            <SwitchRow title={tc("DPI stage", "Enabled")} checked={on} onChange={setEnabled} />
-            <SpinRow title="DPI" value={on ? st.x : DEFAULT_DPI} min={100} max={48000} step={50} disabled={!on} onCommit={(v) => setDpi("x", v)} />
-            <SwitchRow title={t("Separate X / Y")} checked={sep} disabled={!on} onChange={(v) => {
-              setSeparate((s) => ({ ...s, [sepKey]: v }));
-              if (!v) edit((p) => (p.stages[sel].y = p.stages[sel].x));
-            }} />
-            {sep && <SpinRow title={t("DPI Y")} value={on ? st.y : DEFAULT_DPI} min={100} max={48000} step={50} disabled={!on} onCommit={(v) => setDpi("y", v)} />}
-            <SwitchRow title={t("Default after power-on")} checked={profile.defaultStage === sel} disabled={!on} onChange={(v) => {
-              if (v) edit((p) => (p.defaultStage = sel));
-              else toast(t("Pick another stage as the default instead"));
-            }} />
-          </Boxed>
+      <FxCard title={t("DPI stages")} icon="sensor" value={<>{on ? st.x : tc("DPI stage", "off")}<small>DPI</small></>}
+        scene="speed" sceneValue={{ dpi: on ? st.x : 0, marks: enabledDpi }} tall>
+        <p className="ss-hint">{t("How far the cursor goes for the same hand move. Click a stage to switch the mouse to it now; new values are felt after saving. ★ = stage after power-on.")}</p>
+        <div className="stage-chips" role="radiogroup" aria-label={t("DPI stages")}>
+          {profile.stages.map((s, i) => (
+            <button key={i} role="radio" aria-checked={i === sel} className={`ss-chip ${i === sel ? "on" : ""} ${s.x ? "" : "dim"}`} onClick={() => clickChip(i)}>
+              <span className="top">
+                <span>{i + 1}</span>
+                <span className="ss-star" style={{ opacity: profile.defaultStage === i ? 1 : 0 }} title={t("Used after power-on")}>★</span>
+              </span>
+              <span className="dpi">{s.x ? s.x : tc("DPI stage", "off")}</span>
+              <span className="ss-inuse" style={{ opacity: live && info.stage === i ? 1 : 0 }}>{tc("DPI stage", "IN USE")}</span>
+            </button>
+          ))}
         </div>
-      </section>
+        <Boxed>
+          <SwitchRow title={tc("DPI stage", "Enabled")} checked={on} onChange={setEnabled} />
+          <SpinRow title="DPI" value={on ? st.x : DEFAULT_DPI} min={100} max={48000} step={50} disabled={!on} onCommit={(v) => setDpi("x", v)} />
+          <SwitchRow title={t("Separate X / Y")} checked={sep} disabled={!on} onChange={(v) => {
+            setSeparate((s) => ({ ...s, [sepKey]: v }));
+            if (!v) edit((p) => (p.stages[sel].y = p.stages[sel].x));
+          }} />
+          {sep && <SpinRow title={t("DPI Y")} value={on ? st.y : DEFAULT_DPI} min={100} max={48000} step={50} disabled={!on} onCommit={(v) => setDpi("y", v)} />}
+          <SwitchRow title={t("Default after power-on")} checked={profile.defaultStage === sel} disabled={!on} onChange={(v) => {
+            if (v) edit((p) => (p.defaultStage = sel));
+            else toast(t("Pick another stage as the default instead"));
+          }} />
+        </Boxed>
+      </FxCard>
 
       <FxCard title={t("DPI shift")} icon="buttons" value={<>{shift.x}<small>DPI</small></>} scene="dpi" sceneValue={{ ratio: on && st.x ? shift.x / st.x : 1 }} tall>
         <p className="ss-hint">{t("While a button set to DPI shift is held, the mouse slows to this stage for precise aim.")}</p>
@@ -121,45 +117,36 @@ export default function AimPage() {
           options={profile.stages.map((s, i) => ({ value: i, label: s.x ? String(s.x) : tc("DPI stage", "off"), disabled: !s.x }))} />
       </FxCard>
 
-      <div className="fx-cards">
-        <FxCard title={t("Polling rate")} icon="device" value={<>{RATE_LABELS[profile.rateWireless]}<small>Hz</small></>} scene="polling" sceneValue={{ rate: [profile.rateWireless] }}>
-          <p className="ss-hint">{t("Hz. Higher rates feel smoother and use more battery.")}</p>
-          <span className="ss-title">{tc("polling rate", "Wireless")}</span>
-          <Segments<number> value={profile.rateWireless} onChange={(v) => edit((p) => (p.rateWireless = v))} label={tc("polling rate", "Wireless")}
-            options={RATE_LABELS.map((label, i) => ({ value: i, label }))} />
-          <span className="ss-title">{tc("polling rate", "Cable")}</span>
-          <Segments<number> value={profile.rateWired} onChange={(v) => edit((p) => (p.rateWired = v))} label={tc("polling rate", "Cable")}
-            options={RATE_LABELS.slice(0, 4).map((label, i) => ({ value: i, label }))} />
-        </FxCard>
+      <FxCard title={t("Polling rate")} icon="device" value={<>{RATE_LABELS[profile.rateWireless]}<small>Hz</small></>} scene="polling" sceneValue={{ rate: [profile.rateWireless] }} tall>
+        <p className="ss-hint">{t("Hz. Higher rates feel smoother and use more battery.")}</p>
+        <span className="ss-title">{tc("polling rate", "Wireless")}</span>
+        <Segments<number> value={profile.rateWireless} onChange={(v) => edit((p) => (p.rateWireless = v))} label={tc("polling rate", "Wireless")}
+          options={RATE_LABELS.map((label, i) => ({ value: i, label }))} />
+        <span className="ss-title">{tc("polling rate", "Cable")}</span>
+        <Segments<number> value={profile.rateWired} onChange={(v) => edit((p) => (p.rateWired = v))} label={tc("polling rate", "Cable")}
+          options={RATE_LABELS.slice(0, 4).map((label, i) => ({ value: i, label }))} />
+      </FxCard>
 
-        <FxCard title={t("Lift-off distance")} icon="actuation" scene="lod" sceneValue={{ level: [on ? lod : 2] }}
-          value={[tc("lift-off distance", "Low"), tc("lift-off distance", "Medium"), tc("lift-off distance", "High")][lod - 1]}>
-          <p className="ss-hint">{f(t("How high you can lift the mouse before the cursor stops following it. DPI stage %d."), sel + 1)}</p>
-          <Segments<number> value={lod} onChange={(v) => edit((p) => (p.stages[sel].lod = v))} label={t("Lift-off distance")}
-            options={[{ value: 1, label: tc("lift-off distance", "Low"), disabled: !on }, { value: 2, label: tc("lift-off distance", "Medium"), disabled: !on }, { value: 3, label: tc("lift-off distance", "High"), disabled: !on }]} />
-        </FxCard>
+      <FxCard title={t("Lift-off distance")} icon="actuation" scene="lod" sceneValue={{ level: [on ? lod : 2] }} tall
+        value={[tc("lift-off distance", "Low"), tc("lift-off distance", "Medium"), tc("lift-off distance", "High")][lod - 1]}>
+        <p className="ss-hint">{f(t("How high you can lift the mouse before the cursor stops following it. DPI stage %d."), sel + 1)}</p>
+        <Segments<number> value={lod} onChange={(v) => edit((p) => (p.stages[sel].lod = v))} label={t("Lift-off distance")}
+          options={[{ value: 1, label: tc("lift-off distance", "Low"), disabled: !on }, { value: 2, label: tc("lift-off distance", "Medium"), disabled: !on }, { value: 3, label: tc("lift-off distance", "High"), disabled: !on }]} />
+      </FxCard>
 
-        <FxCard title={t("Angle snapping")} icon="next" scene="snap" sceneValue={{ on: [profile.angleSnap !== 0] }}>
-          <p className="ss-hint">{t("Straightens near-horizontal and vertical lines")}</p>
-          <Segments<number> value={profile.angleSnap ? 1 : 0} onChange={(v) => edit((p) => (p.angleSnap = v))} label={t("Angle snapping")}
-            options={[{ value: 0, label: tc("level value", "off") }, { value: 1, label: tc("surface mode", "On") }]} />
-        </FxCard>
-      </div>
+      <FxCard title={t("Angle snapping")} icon="next" scene="snap" sceneValue={{ on: [profile.angleSnap !== 0] }} tall
+        value={profile.angleSnap ? tc("surface mode", "On") : tc("level value", "off")}>
+        <p className="ss-hint">{t("Straightens near-horizontal and vertical lines")}</p>
+        <Segments<number> value={profile.angleSnap ? 1 : 0} onChange={(v) => edit((p) => (p.angleSnap = v))} label={t("Angle snapping")}
+          options={[{ value: 0, label: tc("level value", "off") }, { value: 1, label: tc("surface mode", "On") }]} />
+      </FxCard>
 
-      <details className="fold">
-        <summary>{t("Advanced")}<Icon name="down" /></summary>
-        <div className="fold-body">
-          <Boxed>
-            <ComboRow<number> title={t("Gaming surface mode")} subtitle={t("Applies at once. Device setting, not per profile")} value={Math.max(0, info.surface)}
-              onChange={(v) => void setSurface(v)}
-              options={[{ value: 0, label: tc("surface mode", "Auto") }, { value: 1, label: tc("surface mode", "On") }, { value: 2, label: tc("surface mode", "Off") }]} />
-            <SpinRow title={t("Scroll filter (ms)")} subtitle={t("Bunny-hop scroll filter, 0 = off")} value={Math.min(profile.scrollFilter, 100) * 10} min={0} max={1000} step={10}
-              onCommit={(v) => edit((p) => (p.scrollFilter = Math.round(v / 10)))} />
-            <SpinRow title={t("Low power after (s)")} value={profile.sleepS} min={1} max={3600} step={5} onCommit={(v) => edit((p) => (p.sleepS = v))} />
-            <SpinRow title={t("Sleep after (s)")} value={profile.offS} min={10} max={36000} step={30} onCommit={(v) => edit((p) => (p.offS = v))} />
-          </Boxed>
-        </div>
-      </details>
+      <FxCard title={t("Surface tuning")} icon="sensor" scene="surface" sceneValue={{ mode: surface }} tall live
+        value={[tc("surface mode", "Auto"), tc("surface mode", "On"), tc("surface mode", "Off")][surface]}>
+        <p className="ss-hint">{t("Tunes the sensor to your mousepad for steadier tracking. For the whole mouse, not per profile.")}</p>
+        <Segments<number> value={surface} onChange={(v) => void setSurface(v)} label={t("Gaming surface mode")}
+          options={[{ value: 0, label: tc("surface mode", "Auto") }, { value: 1, label: tc("surface mode", "On") }, { value: 2, label: tc("surface mode", "Off") }]} />
+      </FxCard>
     </>
   );
 }

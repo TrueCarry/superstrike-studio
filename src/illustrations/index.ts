@@ -6,17 +6,25 @@ import { haptics } from "./haptics";
 import { hero } from "./hero";
 import { lod } from "./lod";
 import { polling } from "./polling";
+import { power } from "./power";
 import { profiles } from "./profiles";
 import { rapid } from "./rapid";
 import { remap } from "./remap";
+import { scroll } from "./scroll";
 import { snap } from "./snap";
+import { speed } from "./speed";
+import { surface } from "./surface";
 
-export const SCENES = { hero, actuation, rapid, haptics, polling, dpi, remap, profiles, snap, lod, feel };
+export const SCENES = { hero, actuation, rapid, haptics, polling, dpi, remap, profiles, snap, lod, feel, speed, surface, scroll, power };
 export type SceneName = keyof typeof SCENES;
 export type SceneValue<N extends SceneName> = Parameters<(typeof SCENES)[N]["draw"]>[2];
 
 /** What the README shows: shallow vs deep, off vs on, and so on. */
 export const README: { [N in Exclude<SceneName, "feel">]: SceneValue<N> } = {
+  speed: { dpi: 1600, marks: [400, 800, 1600, 3200] },
+  surface: { mode: 1 },
+  scroll: { ms: 100 },
+  power: { low: 60, sleep: 300 },
   hero: {},
   actuation: { act: [2, 9] },
   rapid: { rt: [0, 2] },
