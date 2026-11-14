@@ -83,6 +83,7 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .stage-mouse { min-width: 0; min-height: 0; display: flex; flex-direction: column; padding: 16px 8px 16px 16px; background: radial-gradient(circle at 50% 45%, rgb(59 156 255 / 7%), transparent 60%); }
 .stage-mouse .mouseview { flex: 1; }
 .panel { min-width: 0; min-height: 0; overflow-y: auto; padding: 20px 20px 32px; display: flex; flex-direction: column; gap: 16px; border-inline-start: 1px solid var(--line); animation: slide 220ms var(--ease); }
+.panel > * { flex: none; }
 .panel-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .panel-head h2 { margin: 0; font-size: 22px; font-weight: 800; }
 .panel-head .spacer { min-width: 8px; }
@@ -408,6 +409,8 @@ details.fold > .fold-body { padding: 0 18px 18px; display: flex; flex-direction:
   .panel { overflow: visible; border-inline-start: 0; border-top: 1px solid var(--line); padding: 16px; }
   .profile-switch > button { min-width: 0; max-width: 200px; }
   .topbar button.save span { display: none; }
+  .segments { flex-wrap: wrap; }
+  .segments button { white-space: normal; min-width: 0; }
   .savebar { padding: 10px 14px; gap: 10px; }
   .savebar .ss-hint { display: none; }
   .savebar button { white-space: nowrap; }

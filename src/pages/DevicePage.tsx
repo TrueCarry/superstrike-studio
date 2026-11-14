@@ -66,11 +66,12 @@ export default function DevicePage() {
         <img src="./logo.svg" alt="" />
         <div>
           <h3>{on ? info.name : "PRO X3 SUPERSTRIKE"}</h3>
-          <span className="ss-hint">{battery || t("Connected")}</span>
+          <span className="ss-hint">{t("Connected")}</span>
         </div>
       </section>
 
       <Boxed>
+        {prop(t("Battery"), battery)}
         {prop(t("Connection"), on ? `${info.demo ? "demo" : "WebHID"} 046d:${info.productId.toString(16).padStart(4, "0")} · ${info.index === 0xff ? t("USB cable") : f(t("LIGHTSPEED receiver slot %d"), info.index)}` : "")}
         {prop(t("Firmware"), on ? info.firmware.join("\n") : "")}
         {prop(t("Onboard memory"), memory)}

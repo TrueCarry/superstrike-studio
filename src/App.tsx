@@ -230,7 +230,7 @@ sudo udevadm control --reload-rules && sudo udevadm trigger`}</pre>
 /**
  * Screenshot states with the demo mouse (tools/parity/shots.mjs): profile=N edits profile N, dirty=1
  * marks it unsaved (nothing is written), press=1 holds the left button and rolls the wheel so the
- * picture shows the live view. Panels read tab= and view= themselves.
+ * picture shows the live view. Panels read tab= and view= themselves. `?shot` skips the quick setup.
  */
 function useShotParams() {
   const [params] = useSearchParams();
