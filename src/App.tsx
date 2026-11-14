@@ -10,11 +10,11 @@ import { Stage } from "./components/Stage";
 import { inputPress, inputWheel } from "./components/useMouseInput";
 import { f, t, tc, tn, useLanguage } from "./i18n/i18n";
 import { Illustration } from "./illustrations/Illustration";
+import AimPage from "./pages/AimPage";
 import ButtonsPage from "./pages/ButtonsPage";
+import ClickPage from "./pages/ClickPage";
 import DevicePage, { LanguagePicker } from "./pages/DevicePage";
-import HitsPage from "./pages/HitsPage";
 import ProfilesPage from "./pages/ProfilesPage";
-import SensorPage from "./pages/SensorPage";
 import {
   autoConnect, connect, connectDemo, getState, markDirty, revert, save, setEdit, slotOf, useStore, type State,
 } from "./state/store";
@@ -52,8 +52,8 @@ export default function App() {
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<Navigate to="/click" replace />} />
-          <Route path="click" element={<HitsPage />} />
-          <Route path="aim" element={<SensorPage />} />
+          <Route path="click" element={<ClickPage />} />
+          <Route path="aim" element={<AimPage />} />
           <Route path="buttons" element={<ButtonsPage />} />
           <Route path="profiles" element={<ProfilesPage />} />
           <Route path="device" element={<DevicePage />} />

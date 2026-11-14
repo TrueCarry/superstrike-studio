@@ -134,6 +134,9 @@ button.pill.big { min-height: 48px; padding: 0 30px; font-size: 16px; display: i
 .ss-pad { border: 2px dashed rgb(59 156 255 / 45%); border-radius: 14px; background: rgb(59 156 255 / 7%); min-height: 88px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; user-select: none; transition: background-color 180ms ease-out; flex: none; }
 .ss-pad.pressed { background: rgb(59 156 255 / 25%); }
 .ss-pad .ss-hint { font-variant-numeric: tabular-nums; }
+.ss-pad { min-height: 140px; border-radius: var(--radius); }
+.ss-pad .cps { font-size: 14px; opacity: .8; }
+.ss-pad .cps b { font-size: 40px; font-weight: 800; color: var(--accent-fg); font-variant-numeric: tabular-nums; opacity: 1; }
 
 /* ---------------------------------------------------------------- boxed lists */
 .boxed { background: var(--row); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 0 0 1px rgb(0 0 0 / 3%), 0 1px 3px rgb(0 0 0 / 7%); flex: none; }
