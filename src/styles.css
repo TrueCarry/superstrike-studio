@@ -68,6 +68,24 @@ button:focus-visible, [tabindex]:focus-visible, select:focus-visible, input:focu
 .device-chip .level { display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ok); white-space: nowrap; }
 .device-chip.low .level { color: var(--warn); }
 .device-chip.charging .level { color: var(--accent-fg); }
+.device-chip.active { background: rgb(59 156 255 / 18%); }
+.device-chip img.hello { animation: hello 700ms var(--ease); }
+@keyframes hello { 0%, 100% { transform: none; } 20% { transform: translateY(-5px) rotate(-14deg); } 45% { transform: rotate(12deg); } 70% { transform: rotate(-6deg); } }
+.popover.mouse-card { left: 0; right: auto; width: 320px; padding: 14px; gap: 12px; }
+.mouse-card header { display: flex; align-items: center; gap: 12px; }
+.mouse-card header img { width: 44px; height: 44px; }
+.mouse-card header div { display: flex; flex-direction: column; min-width: 0; }
+.popover.mouse-card .ss-hint { padding: 0; }
+.mouse-card .now { display: flex; flex-wrap: wrap; gap: 6px; }
+.mouse-card .now span { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: rgb(255 255 255 / 7%); font-size: 12.5px; font-weight: 700; }
+.mouse-card .now .ico { color: var(--accent-fg); width: 14px; height: 14px; }
+.mouse-card .session { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.mouse-card .session div { display: flex; flex-direction: column; align-items: center; padding: 10px 4px; border-radius: 12px; background: var(--row); }
+.mouse-card .session b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.mouse-card .session span { font-size: 11.5px; opacity: .7; text-align: center; }
+.mouse-card footer { display: flex; align-items: center; gap: 8px; }
+.popover.mouse-card footer button { font-weight: 700; justify-content: center; }
+.popover.mouse-card footer button.suggested { background: var(--accent); }
 .battery-cell { flex: none; }
 .topbar button.save .count { display: inline-grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px; background: rgb(255 255 255 / 25%); font-size: 12px; }
 

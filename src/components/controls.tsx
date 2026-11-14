@@ -468,7 +468,7 @@ export function MenuButton(props: { icon: IconName; tooltip: string; children: (
 }
 
 /** Closes an open popover on a click outside `host` or Escape. */
-function useDismiss(open: boolean, host: React.RefObject<HTMLElement | null>, close: () => void) {
+export function useDismiss(open: boolean, host: React.RefObject<HTMLElement | null>, close: () => void) {
   useEffect(() => {
     if (!open) return;
     const away = (e: Event) => host.current && !host.current.contains(e.target as Node) && close();

@@ -33,16 +33,35 @@ export function inputWheel(notches: number) {
   set({ wheelTick: input.wheelTick + 1, wheelDelta: notches });
 }
 
+/** What the mouse did on this page since it opened: presses, wheel notches and pointer travel in CSS px. */
+export const session = { since: Date.now(), clicks: 0, notches: 0, travel: 0 };
+let lastPointer: [number, number] | null = null;
+
 if (typeof window !== "undefined") {
   // The side buttons would otherwise make the browser go back / forward and leave the app.
   for (const type of ["mouseup", "mousedown", "auxclick"] as const)
     window.addEventListener(type, (e) => {
       if (e.button === 3 || e.button === 4) e.preventDefault();
     });
-  window.addEventListener("pointerdown", (e) => BUTTON_ZONE[e.button] && inputPress(BUTTON_ZONE[e.button], true));
+  window.addEventListener("pointerdown", (e) => {
+    if (e.pointerType === "mouse") session.clicks++;
+    if (BUTTON_ZONE[e.button]) inputPress(BUTTON_ZONE[e.button], true);
+  });
   window.addEventListener("pointerup", (e) => BUTTON_ZONE[e.button] && inputPress(BUTTON_ZONE[e.button], false));
-  window.addEventListener("blur", () => input.pressed.size && set({ pressed: new Set() }));
-  window.addEventListener("wheel", (e) => e.deltaY && inputWheel(Math.sign(e.deltaY)), { passive: true });
+  window.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    if (lastPointer) session.travel += Math.hypot(e.screenX - lastPointer[0], e.screenY - lastPointer[1]);
+    lastPointer = [e.screenX, e.screenY];
+  }, { passive: true });
+  window.addEventListener("blur", () => {
+    lastPointer = null;
+    if (input.pressed.size) set({ pressed: new Set() });
+  });
+  window.addEventListener("wheel", (e) => {
+    if (!e.deltaY) return;
+    session.notches++;
+    inputWheel(Math.sign(e.deltaY));
+  }, { passive: true });
 }
 
 export function useMouseInput(): MouseInput {
