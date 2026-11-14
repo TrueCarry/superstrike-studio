@@ -2,7 +2,8 @@
 // edited profile, battery, save), the large mouse in the middle, the settings panel next to it, and the
 // bar that slides up while there are unsaved changes.
 import { useEffect, useRef } from "react";
-import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation, useSearchParams } from "react-router";
+import { HashRouter, Navigate, NavLink, Outlet, Route, Routes, useLocation, useNavigate, useSearchParams } from "react-router";
+import { batteryStateText } from "./hid/device";
 import { Dropdown } from "./components/controls";
 import { DialogHost } from "./components/dialogs";
 import { Icon, type IconName } from "./components/icons";
@@ -108,21 +109,48 @@ function Layout() {
   );
 }
 
-function TopBar() {
+/** The battery as a small cell filled to its level, with a bolt while charging. */
+function Battery(props: { level: number; charging: boolean; low: boolean }) {
+  const fill = props.level < 0 ? 0 : Math.max(2, Math.round((props.level / 100) * 16));
+  return (
+    <svg className={`battery-cell ${props.low ? "low" : ""} ${props.charging ? "charging" : ""}`} viewBox="0 0 24 12" width="24" height="12" aria-hidden>
+      <rect x="0.75" y="0.75" width="20" height="10.5" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <rect x="22" y="3.5" width="2" height="5" rx="1" fill="currentColor" />
+      <rect x="3" y="3" width={fill} height="6" rx="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+/** Logo, mouse name and battery in one chip; a click opens the Device tab. */
+function DeviceChip() {
   const info = useStore((s) => s.info);
+  const navigate = useNavigate();
+  if (!info) return null;
+  const charging = info.batteryState.startsWith("charg");
+  const level = info.battery >= 0;
+  const low = level && !charging && info.battery <= 15;
+  const bat = level ? f(t("%d %%"), info.battery) : "";
+  const label = [info.name, t("Connected"), bat, charging ? batteryStateText(info.batteryState) : ""].filter(Boolean).join(" · ");
+  return (
+    <button className={`device-chip ${low ? "low" : ""} ${charging ? "charging" : ""}`} onClick={() => navigate("/device")} title={label} aria-label={label}>
+      <img src="./logo.svg" alt="" />
+      <span className="name">{info.name}</span>
+      {(level || charging) && (
+        <span className="level">
+          <Battery level={info.battery} charging={charging} low={low} />
+          {charging && <Icon name="bolt" size={12} />}
+          {bat}
+        </span>
+      )}
+    </button>
+  );
+}
+
+function TopBar() {
   const dirty = useStore((s) => s.dirty.length);
-  const charging = !!info?.batteryState.startsWith("charg");
-  const level = !!info && info.battery >= 0;
-  // "82 %", "82 % ⚡" while charging, "⚡" when the level is unknown
-  let bat = level ? `${info!.battery} %` : "";
-  if (charging) bat += bat ? " ⚡" : "⚡";
-  const low = level && !charging && info!.battery <= 15;
   return (
     <header className="topbar">
-      <div className="brand" title={info?.name}>
-        <img src="./logo.svg" alt="" />
-        <span className="dot ok" aria-label={t("Connected")}>●</span>
-      </div>
+      <DeviceChip />
       <nav className="tabs">
         {TABS.map((p) => (
           <NavLink key={p.to} to={p.to} className={({ isActive }) => (isActive ? "on" : "")}>
@@ -133,10 +161,10 @@ function TopBar() {
       </nav>
       <EditedProfile />
       <span className="spacer" />
-      {bat && <span className={`battery ${low ? "low" : ""}`}>{bat}</span>}
       <button className="suggested pill save" disabled={!dirty} onClick={() => void save()} title={t("Write the changes into the mouse memory (Ctrl+S)")}>
         <Icon name="save" />
         <span>{t("Save to mouse")}</span>
+        {dirty > 0 && <b className="count">{dirty}</b>}
       </button>
     </header>
   );
